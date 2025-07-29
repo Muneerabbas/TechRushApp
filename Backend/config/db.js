@@ -1,17 +1,16 @@
-// Example: /config/db.js
-
 const mongoose = require('mongoose');
 
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI);
-    console.log('MongoDB Connected...');
-  } catch (err) {
-    console.error(err.message);
-    // Exit process with failure
-    process.exit(1);
-  }
-};
+  const connectDB = async () => {
+    try {
+      await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/campuspay', {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log('MongoDB Connected...');
+    } catch (err) {
+      console.error('MongoDB connection error:', err.message);
+      setTimeout(connectDB, 5000); // Retry after 5 seconds
+    }
+  };
 
-// Make sure you have this line!
-module.exports = connectDB;
+  module.exports = connectDB;

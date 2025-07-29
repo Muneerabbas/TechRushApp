@@ -1,28 +1,39 @@
+// server.js
+
 const express = require('express');
 const dotenv = require('dotenv');
+const path = require('path');
+const fs = require('fs');
 const connectDB = require('./config/db');
+const errorHandler = require('./middleware/errorHandler');
+const apiRoutes = require('./routes/api');
 
-// Load environment variables
 dotenv.config();
-
-// Connect to the database
 connectDB();
 
 const app = express();
 
-// Middleware to parse JSON bodies
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// --- ADDED: Sample request to test the server ---
-// This will respond when you visit the root URL (e.g., http://localhost:5000)
+// --- Static Folder for Uploads ---
+// Create the 'uploads' directory if it doesn't exist.
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir);
+}
+// Serve the 'uploads' folder statically. This makes images available via URLs
+// like http://localhost:5000/uploads/user-123.jpg
+app.use('/uploads', express.static(uploadsDir));
+
+// API Routes
 app.get('/', (req, res) => {
-    res.send('✅ Campus Pay API is running!');
+  res.send('✅ Campus Pay API is running!');
 });
+app.use('/api', apiRoutes);
 
-// Mount the main API router
-// All routes defined in routes/api.js will be prefixed with /api
-app.use('/api', require('./routes/api'));
+// Error Handling
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server running in ${process.env.NODE_ENV} mode on port ${PORT}`));
