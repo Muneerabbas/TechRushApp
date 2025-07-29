@@ -1,0 +1,40 @@
+const mongoose = require('mongoose')
+const eventSchema = new mongoose.Schema(
+{
+    title:{
+        required:true,
+        type:String,
+    },
+    description:{
+        type:String,
+        trim:true,
+    },
+    date:{
+        type:Date,
+        required:true,
+    },
+    club:{
+        type:mongoose.Schema.ObjectId,
+        ref:'CLub',
+        required:true,
+    },
+    creator:{
+        type:mongoose.Schema.ObjectId,
+        ref:'User',
+        required:true,
+    },
+    media:{
+        type:String,
+        default:'',
+    },
+    participants:[{
+        type:mongoose.Schema.ObjectId,
+        ref:'User',
+    }],
+    createdAt:{
+        type:Date,
+        default:Date.now,
+    }
+}
+);
+module.exports = mongoose.model('Event',eventSchema);
