@@ -5,20 +5,20 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -27,26 +27,73 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.campus_pay.ui.components.CustomTextField
-import com.example.campus_pay.ui.components.ProfileImageSection
 import com.example.campus_pay.ui.screens.login.LoginViewModel
-import kotlinx.coroutines.delay
+import com.example.campus_pay.ui.theme.*
 import kotlinx.coroutines.launch
+
+// --- Color Theme Definition ---
+val ButtonOrange = Color(0xFFF9A825)
+val LightGrayBackground = Color(0xFFF5F5F5)
+val IconBlue = Color(0xFF4C5BFF)
+
+// Define status colors
+val SuccessMain = Color(0xFF4CAF50)
+val WarningMain = Color(0xFFFFA000)
+val ErrorMain = Color(0xFFF44336)
+
+// --- High-Contrast Custom Text Field ---
+@Composable
+fun CustomTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    modifier: Modifier = Modifier,
+    isError: Boolean = false,
+    errorMessage: String? = null,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    trailingIcon: @Composable (() -> Unit)? = null
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        modifier = modifier,
+        isError = isError,
+        supportingText = {
+            if (isError && errorMessage != null) {
+                Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
+            }
+        },
+        visualTransformation = visualTransformation,
+        keyboardOptions = keyboardOptions,
+        trailingIcon = trailingIcon,
+        shape = RoundedCornerShape(16.dp),
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White,
+            focusedBorderColor = IconBlue,
+            unfocusedBorderColor = Color.LightGray,
+            focusedLabelColor = IconBlue,
+            unfocusedLabelColor = Color.Gray,
+            cursorColor = IconBlue,
+            focusedTextColor = Color.Black,
+            unfocusedTextColor = Color.Black
+        )
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,359 +108,268 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf(uiState.confirmPassword) }
     val keyboardController = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
 
-    // Animation state for card
     var isVisible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         isVisible = true
     }
 
-    // Professional gradient background
-    val gradient = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFF0D47A1), // Navy blue
-            Color(0xFF4FC3F7) // Light teal
-        )
-    )
-
     Scaffold(
         topBar = {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(80.dp),
-                shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
-                color = Color(0xFF0D47A1),
-                shadowElevation = 8.dp
-            ) {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            text = "Campus Pay",
-                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp),
-                            color = Color.White,
-                            maxLines = 1
+            CenterAlignedTopAppBar(
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.PersonAdd,
+                            contentDescription = "Create Account Icon",
+                            tint = IconBlue
                         )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            if (navController.previousBackStackEntry != null) {
-                                navController.popBackStack()
-                            } else {
-                                navController.navigate("login") {
-                                    popUpTo("register") { inclusive = true }
-                                }
-                            }
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Back",
-                                tint = Color.White
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = Color.Transparent
-                    )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Create Account",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = LightGrayBackground,
+                    titleContentColor = Color.Black,
+                    navigationIconContentColor = Color.Black
                 )
-            }
+            )
         },
-        containerColor = Color.Transparent,
+        containerColor = LightGrayBackground,
         modifier = modifier
     ) { padding ->
-        Box(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(gradient),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(bottom = 24.dp)
         ) {
-            AnimatedVisibility(
-                visible = isVisible,
-                enter = fadeIn(animationSpec = tween(800)) + scaleIn(animationSpec = tween(800)),
-                exit = fadeOut(animationSpec = tween(400))
-            ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth(0.9f)
-                        .fillMaxHeight(0.75f)
-                        .clip(RoundedCornerShape(24.dp))
-                        .shadow(6.dp, RoundedCornerShape(24.dp)),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color.White
-                    )
+            val baseDelay = 200
+            val itemDelay = 100
+
+            item {
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = slideInVertically { with(density) { -20.dp.roundToPx() } } + fadeIn(tween(delayMillis = baseDelay))
                 ) {
-                    LazyColumn(
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        CircularProfileImage()
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Add a profile photo (optional)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+                }
+            }
+
+            item {
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(tween(delayMillis = baseDelay + itemDelay * 1))
+                ) {
+                    Column {
+                        CustomTextField(
+                            value = uiState.username,
+                            onValueChange = { viewModel.updateUsername(it) },
+                            label = "Username",
+                            isError = uiState.username.isNotEmpty() && uiState.username.length < 3,
+                            errorMessage = if (uiState.username.isNotEmpty() && uiState.username.length < 3) "Username is too short" else null,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+            }
+
+            item {
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(tween(delayMillis = baseDelay + itemDelay * 2))
+                ) {
+                    Column {
+                        CustomTextField(
+                            value = uiState.email,
+                            onValueChange = { viewModel.updateEmail(it) },
+                            label = "Email",
+                            isError = uiState.email.isNotEmpty() && !uiState.isEmailValid,
+                            errorMessage = if (uiState.email.isNotEmpty() && !uiState.isEmailValid) "Please enter a valid email" else null,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
+            }
+
+            item {
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(tween(delayMillis = baseDelay + itemDelay * 3))
+                ) {
+                    Column {
+                        CustomTextField(
+                            value = uiState.password,
+                            onValueChange = { viewModel.updatePassword(it) },
+                            label = "Password",
+                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            isError = uiState.password.isNotEmpty() && uiState.password.length < 6,
+                            errorMessage = if (uiState.password.isNotEmpty() && uiState.password.length < 6) "Password must be at least 6 characters" else null,
+                            trailingIcon = {
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(
+                                        imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                        contentDescription = "Toggle password visibility",
+                                        tint = Color.Gray
+                                    )
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        PasswordStrengthIndicator(password = uiState.password)
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
+            }
+
+            item {
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(tween(delayMillis = baseDelay + itemDelay * 4))
+                ) {
+                    Column {
+                        CustomTextField(
+                            value = confirmPassword,
+                            onValueChange = {
+                                confirmPassword = it
+                                viewModel.updateConfirmPassword(it)
+                            },
+                            label = "Confirm Password",
+                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            isError = confirmPassword.isNotEmpty() && confirmPassword != uiState.password,
+                            errorMessage = if (confirmPassword.isNotEmpty() && confirmPassword != uiState.password) "Passwords do not match" else null,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+                }
+            }
+
+            item {
+                AnimatedVisibility(
+                    visible = isVisible,
+                    enter = fadeIn(tween(delayMillis = baseDelay + itemDelay * 5))
+                ) {
+                    val interactionSource = remember { MutableInteractionSource() }
+                    val isPressed by interactionSource.collectIsPressedAsState()
+                    val buttonScale by animateFloatAsState(targetValue = if (isPressed) 0.95f else 1f, animationSpec = spring(), label = "ButtonScale")
+
+                    Button(
+                        onClick = {
+                            keyboardController?.hide()
+                            if (viewModel.validateRegistration(confirmPassword)) {
+                                scope.launch {
+                                    onRegisterSuccess()
+                                }
+                            }
+                        },
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                            .fillMaxWidth()
+                            .height(52.dp)
+                            .scale(buttonScale),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = ButtonOrange,
+                            contentColor = Color.White
+                        ),
+                        interactionSource = interactionSource
                     ) {
-                        item {
-                            // Title
-                            Text(
-                                text = "Register",
-                                style = MaterialTheme.typography.headlineLarge.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 28.sp
-                                ),
-                                color = Color(0xFF0D47A1),
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 16.dp)
-                            )
-                        }
-
-                        item {
-                            // Profile Image
-                            ProfileImageSection(viewModel = viewModel, isEditable = true)
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "Profile photo is optional",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFF0D47A1).copy(alpha = 0.6f)
-                            )
-                        }
-
-                        item {
-                            // Username Field
-                            CustomTextField(
-                                value = uiState.username,
-                                onValueChange = { viewModel.updateUsername(it) },
-                                label = "Username",
-                                isError = uiState.username.isNotEmpty() && uiState.username.length < 3,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-
-                        item {
-                            // Email Field
-                            CustomTextField(
-                                value = uiState.email,
-                                onValueChange = { viewModel.updateEmail(it) },
-                                label = "Email",
-                                isError = uiState.email.isNotEmpty() && !uiState.isEmailValid,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-
-                        item {
-                            // Password Field
-                            CustomTextField(
-                                value = uiState.password,
-                                onValueChange = { viewModel.updatePassword(it) },
-                                label = "Password",
-                                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                isError = uiState.password.isNotEmpty() && uiState.password.length < 6,
-                                trailingIcon = {
-                                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                        Icon(
-                                            imageVector = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                            contentDescription = if (passwordVisible) "Hide password" else "Show password",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-
-                        item {
-                            // Confirm Password Field
-                            CustomTextField(
-                                value = confirmPassword,
-                                onValueChange = {
-                                    confirmPassword = it
-                                    viewModel.updateConfirmPassword(it)
-                                },
-                                label = "Confirm Password",
-                                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                isError = confirmPassword.isNotEmpty() && confirmPassword != uiState.password,
-                                trailingIcon = {
-                                    if (confirmPassword.isNotEmpty() && confirmPassword != uiState.password) {
-                                        Icon(
-                                            imageVector = Icons.Default.Error,
-                                            contentDescription = "Passwords do not match",
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                },
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-
-                        item {
-                            // Password Strength Indicator
-                            PasswordStrengthIndicator(password = uiState.password)
-                        }
-
-                        item {
-                            // Role Dropdown
-                            RoleDropdown(
-                                selectedRole = uiState.role,
-                                onRoleSelected = { viewModel.updateRole(it) }
-                            )
-                        }
-
-                        item {
-                            // College/University Field
-                            CustomTextField(
-                                value = uiState.college,
-                                onValueChange = { viewModel.updateCollege(it) },
-                                label = "College/University",
-                                isError = uiState.college.isNotEmpty() && uiState.college.length < 3,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-
-                        item {
-                            // Error Message
-                            if (uiState.errorMessage.isNotEmpty()) {
-                                Text(
-                                    text = uiState.errorMessage,
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.padding(horizontal = 8.dp)
-                                )
-                            }
-                        }
-
-                        item {
-                            // Sign Up Button
-                            val interactionSource = remember { MutableInteractionSource() }
-                            val isPressed by interactionSource.collectIsPressedAsState()
-                            val buttonScale by animateFloatAsState(
-                                targetValue = if (isPressed) 0.95f else 1f,
-                                animationSpec = spring(),
-                                label = "ButtonScale"
-                            )
-
-                            Button(
-                                onClick = {
-                                    keyboardController?.hide()
-                                    if (viewModel.validateRegistration(confirmPassword)) {
-                                        scope.launch {
-                                            viewModel.showAlert("Registration successful!")
-                                            delay(1000)
-                                            onRegisterSuccess()
-                                        }
-                                    }
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(60.dp)
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .scale(buttonScale),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = Color(0xFF0D47A1),
-                                    contentColor = Color.White
-                                ),
-                                interactionSource = interactionSource
-                            ) {
-                                Text(
-                                    text = "Sign Up",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                            }
-                        }
+                        Text(
+                            text = "Sign Up",
+                            style = MaterialTheme.typography.labelLarge
+                        )
                     }
                 }
             }
         }
     }
-
-    // Alert Dialog for Success or Error
-    if (uiState.showAlert) {
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissAlert() },
-            title = { Text("Registration Status") },
-            text = { Text(uiState.alertMessage) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.dismissAlert() }) {
-                    Text("OK")
-                }
-            }
-        )
-    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RoleDropdown(
-    selectedRole: String,
-    onRoleSelected: (String) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-    val roles = listOf("Student", "Teacher", "Other")
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
+fun CircularProfileImage(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .size(100.dp)
+            .clip(CircleShape)
+            .background(Color.White)
+            .border(
+                width = 3.dp,
+                color = IconBlue,
+                shape = CircleShape
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        CustomTextField(
-            value = selectedRole,
-            onValueChange = {},
-            label = "Role",
-            trailingIcon = {
-                Icon(
-                    imageVector = if (expanded) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                    contentDescription = "Dropdown",
-                    tint = Color(0xFF0D47A1)
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .menuAnchor(),
-            readOnly = true
+        Icon(
+            imageVector = Icons.Default.Person,
+            contentDescription = "Profile Icon",
+            modifier = Modifier.size(60.dp),
+            tint = IconBlue.copy(alpha = 0.8f)
         )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            modifier = Modifier.background(Color.White)
-        ) {
-            roles.forEach { role ->
-                DropdownMenuItem(
-                    text = { Text(role, style = MaterialTheme.typography.bodyLarge) },
-                    onClick = {
-                        onRoleSelected(role)
-                        expanded = false
-                    },
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-        }
     }
 }
 
 @Composable
 fun PasswordStrengthIndicator(password: String) {
     val strength = when {
-        password.length >= 12 -> "Strong"
+        password.length >= 12 && password.any { it.isDigit() } && password.any { it.isUpperCase() } -> "Strong"
         password.length >= 8 -> "Medium"
         password.isNotEmpty() -> "Weak"
         else -> ""
     }
     val color = when (strength) {
-        "Strong" -> Color(0xFF4CAF50)
-        "Medium" -> Color(0xFFFFC107)
-        "Weak" -> Color(0xFFF44336)
-        else -> Color(0xFF0D47A1).copy(alpha = 0.5f)
+        "Strong" -> SuccessMain
+        "Medium" -> WarningMain
+        "Weak" -> ErrorMain
+        else -> Color.Transparent
+    }
+    val progress = when (strength) {
+        "Strong" -> 1.0f
+        "Medium" -> 0.6f
+        "Weak" -> 0.3f
+        else -> 0.0f
     }
 
-    if (strength.isNotEmpty()) {
-        Text(
-            text = "Password Strength: $strength",
-            style = MaterialTheme.typography.bodySmall,
+    if (password.isNotEmpty()) {
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(6.dp)
+                .clip(RoundedCornerShape(12.dp)),
             color = color,
-            modifier = Modifier.padding(horizontal = 8.dp)
+            trackColor = Color.LightGray
         )
     }
 }
@@ -421,10 +377,10 @@ fun PasswordStrengthIndicator(password: String) {
 @Preview(showBackground = true)
 @Composable
 fun RegisterScreenPreview() {
-    MaterialTheme {
+    Campus_payTheme {
         RegisterScreen(
             navController = rememberNavController(),
-            onRegisterSuccess = { println("Registration successful") }
+            onRegisterSuccess = { }
         )
     }
 }
