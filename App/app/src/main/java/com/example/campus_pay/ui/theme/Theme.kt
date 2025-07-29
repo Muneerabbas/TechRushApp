@@ -9,28 +9,78 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+// Define the Light Color Scheme for Campus Pay
+private val LightColorScheme = lightColorScheme(
+    primary = BlueMain,
+    onPrimary = White,
+    primaryContainer = BlueLight,
+    onPrimaryContainer = BlueDark,
+
+    secondary = TealMain,
+    onSecondary = White,
+    secondaryContainer = TealLight,
+    onSecondaryContainer = TealDark,
+
+    tertiary = AmberMain,
+    onTertiary = Black,
+    tertiaryContainer = AmberLight,
+    onTertiaryContainer = AmberDark,
+
+    error = ErrorMain,
+    onError = White,
+    errorContainer = ErrorLight,
+    onErrorContainer = ErrorDark,
+
+    background = Gray100, // A soft, off-white background
+    onBackground = Gray900, // Dark text for high contrast
+
+    surface = White, // Cards and dialogs are slightly brighter than the background
+    onSurface = Gray900,
+
+    surfaceVariant = Gray200,
+    onSurfaceVariant = Gray700,
+
+    outline = Gray400
 )
 
-private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+// Define the Dark Color Scheme for Campus Pay
+private val DarkColorScheme = darkColorScheme(
+    primary = BlueLight,
+    onPrimary = BlueDark,
+    primaryContainer = BlueDark,
+    onPrimaryContainer = BlueLight,
 
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    secondary = TealLight,
+    onSecondary = TealDark,
+    secondaryContainer = TealDark,
+    onSecondaryContainer = TealLight,
+
+    tertiary = AmberLight,
+    onTertiary = AmberDark,
+    tertiaryContainer = AmberDark,
+    onTertiaryContainer = AmberLight,
+
+    error = ErrorLight,
+    onError = ErrorDark,
+    errorContainer = ErrorDark,
+    onErrorContainer = ErrorLight,
+
+    background = Gray900, // A very dark gray, not pure black
+    onBackground = Gray200, // Light gray text
+
+    surface = Gray800, // Cards and dialogs are slightly lighter than the background
+    onSurface = Gray200,
+
+    surfaceVariant = Gray700,
+    onSurfaceVariant = Gray400,
+
+    outline = Gray600
 )
 
 @Composable
@@ -48,6 +98,15 @@ fun Campus_payTheme(
 
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
+    }
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.primary.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
+        }
     }
 
     MaterialTheme(
