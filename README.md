@@ -1,2 +1,2 @@
 # TechRushApp
-Repo For TechRush Hackathon
+Repo For TechRush Hackathon(Campus Pay)
