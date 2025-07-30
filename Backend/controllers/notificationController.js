@@ -1,22 +1,28 @@
-// controllers/notificationController.js
 const Notification = require('../models/Notification');
 
-exports.getNotifications = async (req, res, next) => {
+exports.createNotification = async (req, res, next) => {
   try {
-    const notifications = await Notification.find({ user: req.user.id });
-    res.json(notifications);
+    const { message, type, relatedId } = req.body;
+    if (!message || !type) {
+      return res.status(400).json({ message: 'Message and type are required.' });
+    }
+    const notification = new Notification({
+      user: req.user._id,
+      message,
+      type,
+      relatedId,
+    });
+    await notification.save();
+    res.status(201).json({ message: 'Notification created', notification });
   } catch (error) {
     next(error);
   }
 };
 
-exports.markAsRead = async (req, res, next) => {
+exports.getNotifications = async (req, res, next) => {
   try {
-    const notification = await Notification.findById(req.params.id);
-    if (!notification) return res.status(404).json({ message: 'Notification not found' });
-    notification.read = true;
-    await notification.save();
-    res.json(notification);
+    const notifications = await Notification.find({ user: req.user._id }).sort({ createdAt: -1 });
+    res.status(200).json(notifications);
   } catch (error) {
     next(error);
   }

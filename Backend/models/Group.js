@@ -28,8 +28,8 @@ const groupSchema = new mongoose.Schema({
   ],
   totalAmount: {
     type: Number,
-    required: true,
     min: 0,
+    default: 0,
   },
   description: {
     type: String,
@@ -38,6 +38,9 @@ const groupSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+}, {
+  // Add index for better query performance on participants
+  indexes: [{ 'participants.user': 1 }],
 });
 
 module.exports = mongoose.model('Group', groupSchema);
