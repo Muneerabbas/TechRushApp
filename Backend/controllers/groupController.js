@@ -1,25 +1,24 @@
 const Group = require('../models/Group');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Message = require('../models/Message');
 const mongoose = require('mongoose');
 
 exports.createGroup = async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  console.log('Params:', req.params);
+  console.log('Body:', req.body);
 
   try {
     const { name, participants, description } = req.body;
     if (!name) {
-      await session.abortTransaction();
       return res.status(400).json({ message: 'Group name is required.' });
     }
 
     let participantIds = [];
     if (participants && Array.isArray(participants) && participants.length > 0) {
       participantIds = participants.map(id => new mongoose.Types.ObjectId(id));
-      const validUsers = await User.find({ _id: { $in: participantIds } }).session(session);
+      const validUsers = await User.find({ _id: { $in: participantIds } });
       if (validUsers.length !== participants.length) {
-        await session.abortTransaction();
         return res.status(404).json({ message: 'One or more participants not found.' });
       }
     }
@@ -36,15 +35,65 @@ exports.createGroup = async (req, res, next) => {
       participants: participantIds.map(userId => ({ user: userId })),
       description,
     });
-    await group.save({ session });
+    await group.save();
 
-    await session.commitTransaction();
     res.status(201).json({ message: 'Group created successfully', group });
   } catch (error) {
-    await session.abortTransaction();
     next(error);
-  } finally {
-    session.endSession();
+  }
+};
+
+exports.sendGroupMessage = async (req, res, next) => {
+  try {
+    const { groupId, content } = req.body;
+    if (!groupId || !content) {
+      return res.status(400).json({ message: 'Group ID and content are required.' });
+    }
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found.' });
+    }
+
+    // Check if the sender is a participant
+    const isParticipant = group.participants.some(p => p.user.equals(req.user._id));
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Only group members can send messages.' });
+    }
+
+    const message = new Message({
+      group: groupId,
+      sender: req.user._id,
+      content,
+    });
+    await message.save();
+
+    res.status(201).json({ message: 'Message sent successfully', message });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getGroupMessages = async (req, res, next) => {
+  try {
+    const { groupId } = req.params;
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ message: 'Group not found.' });
+    }
+
+    // Check if the requester is a participant
+    const isParticipant = group.participants.some(p => p.user.equals(req.user._id));
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Only group members can view messages.' });
+    }
+
+    const messages = await Message.find({ group: groupId })
+      .populate('sender', 'name')
+      .sort({ timestamp: 1 });
+    res.status(200).json(messages);
+  } catch (error) {
+    next(error);
   }
 };
 
