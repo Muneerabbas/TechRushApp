@@ -25,7 +25,6 @@ exports.sendPayment = async (req, res, next) => {
     });
     await transaction.save();
 
-    // Create notification for receiver
     const receiverNotification = new Notification({
       user: receiverId,
       message: `You received a $${amount} payment from ${req.user.name} for ${description}`,
@@ -34,7 +33,6 @@ exports.sendPayment = async (req, res, next) => {
     });
     await receiverNotification.save();
 
-    // Create notification for sender
     const senderNotification = new Notification({
       user: req.user._id,
       message: `You sent a $${amount} payment to ${receiver.name} for ${description}`,

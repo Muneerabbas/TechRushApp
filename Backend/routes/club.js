@@ -2,16 +2,33 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const role = require('../middleware/role');
+const role = require('../middleware/role'); // Make sure this middleware is required
 const clubController = require('../controllers/clubController');
+const multer = require('multer');
+const path = require('path');
+
+// --- Multer Configuration for Club Cover Image Uploads ---
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/'); // Ensure 'uploads' directory exists
+  },
+  filename: (req, file, cb) => {
+    // Create a unique filename for the club cover image
+    cb(null, `club-cover-${Date.now()}${path.extname(file.originalname)}`);
+  },
+});
+
+const upload = multer({ storage: storage });
+
 
 // @route   POST api/clubs
-// @desc    Create a new club
-// @access  Admin
+// @desc    Create a new club (with optional cover image)
+// @access  Admin Only
 router.post(
     '/',
-    auth,
-    role(['Admin']),
+    auth, 
+    role(['Admin']), 
+    upload.single('coverImage'), 
     clubController.createClub
 );
 
@@ -34,6 +51,11 @@ router.post('/:clubId/join', auth, clubController.requestToJoinClub);
 // @desc    Approve or deny a join request
 // @access  Club Organizers
 router.post('/:clubId/manage-request', auth, clubController.manageJoinRequest);
+
+// @route   POST api/clubs/:clubId/organizers
+// @desc    Add a new organizer to the club
+// @access  Existing Club Organizers
+router.post('/:clubId/organizers', auth, clubController.addOrganizer);
 
 
 module.exports = router;

@@ -3,38 +3,103 @@ const Club = require('../models/Club');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
 const logger = require('../utils/logger');
+const fs = require('fs').promises; // Required for file system operations
 
 /**
- * @description Create a new club. Only accessible by Admins.
+ * @description Create a new club, now with optional file upload.
  */
 exports.createClub = async (req, res, next) => {
   try {
     const { name, description, membershipType, subscriptionFee, subscriptionFrequency } = req.body;
 
+    if (!name || !description) {
+      if (req.file) await fs.unlink(req.file.path); 
+      return res.status(400).json({ message: 'Club name and description are required.' });
+    }
+
     if (membershipType === 'Subscription' && (!subscriptionFee || subscriptionFee <= 0)) {
+        if (req.file) await fs.unlink(req.file.path);
         return res.status(400).json({ message: 'Subscription-based clubs must have a fee greater than zero.' });
     }
 
     const clubExists = await Club.findOne({ name });
     if (clubExists) {
+        if (req.file) await fs.unlink(req.file.path);
         return res.status(400).json({ message: `A club with the name "${name}" already exists.` });
     }
+
+    // Set the path for the cover image if a file was uploaded
+    const coverImage = req.file ? `/uploads/${req.file.filename}` : '';
 
     const club = new Club({
         name,
         description,
-        creator: req.user._id, // The logged-in admin is the creator
+        creator: req.user._id,
         membershipType,
         subscriptionFee: membershipType === 'Subscription' ? subscriptionFee : 0,
         subscriptionFrequency: membershipType === 'Subscription' ? subscriptionFrequency : null,
+        coverImage: coverImage,
     });
 
     await club.save();
-    logger.info(`Club "${name}" created by admin ${req.user.email}`);
+    logger.info(`Club "${name}" created by ${req.user.email}`);
     res.status(201).json({ message: 'Club created successfully', club });
   } catch (error) {
+    // If any other error occurs after file upload, delete the file
+    if (req.file) {
+      await fs.unlink(req.file.path).catch(err => console.error("Error deleting file on failure:", err));
+    }
     next(error);
   }
+};
+
+/**
+ * @description Add a new organizer to a club.
+ */
+exports.addOrganizer = async (req, res, next) => {
+    try {
+        const { clubId } = req.params;
+        const { newOrganizerId } = req.body;
+
+        const club = await Club.findById(clubId);
+        if (!club) {
+            return res.status(404).json({ message: 'Club not found.' });
+        }
+
+        // Check if the current user is an organizer
+        if (!club.organizers.includes(req.user._id)) {
+            return res.status(403).json({ message: 'Forbidden. Only existing organizers can add new ones.' });
+        }
+
+        // Check if the new organizer is a valid user and not already an organizer
+        const newOrganizer = await User.findById(newOrganizerId);
+        if (!newOrganizer) {
+            return res.status(404).json({ message: 'User to be added as organizer not found.' });
+        }
+        if (club.organizers.includes(newOrganizerId)) {
+            return res.status(400).json({ message: 'This user is already an organizer.' });
+        }
+
+        club.organizers.push(newOrganizerId);
+        // If the new organizer was a regular member, remove them from the members list
+        club.members = club.members.filter(member => !member.user.equals(newOrganizerId));
+        
+        await club.save();
+
+        // Notify the new organizer
+        await new Notification({
+            user: newOrganizerId,
+            message: `You have been made an organizer for the club: "${club.name}".`,
+            type: 'Club',
+            relatedId: club._id,
+        }).save();
+
+        logger.info(`User ${newOrganizerId} was added as an organizer to "${club.name}" by ${req.user.email}`);
+        res.status(200).json({ message: 'New organizer added successfully.', club });
+
+    } catch (error) {
+        next(error);
+    }
 };
 
 /**
@@ -56,7 +121,8 @@ exports.getClubDetails = async (req, res, next) => {
     try {
         const club = await Club.findById(req.params.clubId)
             .populate('organizers', 'name profilePicture')
-            .populate('members.user', 'name profilePicture');
+            .populate('members.user', 'name profilePicture')
+            .populate('pendingRequests', 'name profilePicture');
 
         if (!club) {
             return res.status(404).json({ message: 'Club not found.' });
@@ -79,7 +145,6 @@ exports.requestToJoinClub = async (req, res, next) => {
 
         const userId = req.user._id;
 
-        // Check if user is already a member, organizer, or has a pending request
         if (club.members.some(m => m.user.equals(userId)) || club.organizers.includes(userId)) {
             return res.status(400).json({ message: 'You are already a member of this club.' });
         }
@@ -90,7 +155,6 @@ exports.requestToJoinClub = async (req, res, next) => {
         club.pendingRequests.push(userId);
         await club.save();
         
-        // Notify organizers
         const notifications = club.organizers.map(orgId => ({
             user: orgId,
             message: `${req.user.name} has requested to join your club, "${club.name}".`,
@@ -111,7 +175,7 @@ exports.requestToJoinClub = async (req, res, next) => {
  */
 exports.manageJoinRequest = async (req, res, next) => {
     try {
-        const { studentId, action } = req.body; // action can be 'approve' or 'deny'
+        const { studentId, action } = req.body;
         if (!['approve', 'deny'].includes(action)) {
             return res.status(400).json({ message: "Invalid action. Must be 'approve' or 'deny'." });
         }
@@ -121,12 +185,10 @@ exports.manageJoinRequest = async (req, res, next) => {
             return res.status(404).json({ message: 'Club not found.' });
         }
 
-        // Check if the requester is an organizer
         if (!club.organizers.includes(req.user._id)) {
             return res.status(403).json({ message: 'Forbidden. Only club organizers can manage requests.' });
         }
 
-        // Remove the student from pending requests
         if (!club.pendingRequests.includes(studentId)) {
             return res.status(404).json({ message: 'This user does not have a pending request.' });
         }
@@ -144,7 +206,6 @@ exports.manageJoinRequest = async (req, res, next) => {
         
         await club.save();
 
-        // Notify the student of the decision
         await new Notification({
             user: studentId,
             message: notificationMessage,
