@@ -1,3 +1,4 @@
+// models/Notification.js
 const mongoose = require('mongoose');
 
 const notificationSchema = new mongoose.Schema({
@@ -5,6 +6,7 @@ const notificationSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+    index: true,
   },
   message: {
     type: String,
@@ -12,15 +14,22 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['Payment', 'Request', 'Group'],
     required: true,
+    // FIX: Added 'PaymentRequest' and 'PaymentSettled' to the list of allowed types.
+    enum: [
+        'Club',
+        'Event',
+        'Group',
+        'Payment',
+        'PaymentRequest', // For when a bill is created
+        'PaymentSettled'  // For when a user pays their share
+    ],
   },
   relatedId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Transaction',
-    required: false,
+    required: true,
   },
-  read: {
+  isRead: {
     type: Boolean,
     default: false,
   },

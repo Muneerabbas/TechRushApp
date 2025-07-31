@@ -1,9 +1,11 @@
+// models/Group.js
 const mongoose = require('mongoose');
 
 const groupSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
+    trim: true,
   },
   creator: {
     type: mongoose.Schema.Types.ObjectId,
@@ -12,35 +14,26 @@ const groupSchema = new mongoose.Schema({
   },
   participants: [
     {
+      // We only need to store the user reference here.
+      // Bill details are now in the dedicated Bill model.
       user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
       },
-      amountOwed: {
-        type: Number,
-        default: 0,
-      },
-      paid: {
-        type: Boolean,
-        default: false,
-      },
+      _id: false // To prevent creating an _id for each participant sub-document
     },
   ],
-  totalAmount: {
-    type: Number,
-    min: 0,
-    default: 0,
-  },
   description: {
-    type: String,
+      type: String,
+      trim: true,
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-}, {
-  // Add index for better query performance on participants
-  indexes: [{ 'participants.user': 1 }],
 });
+
+// This ensures efficient queries on the participants array.
+groupSchema.index({ 'participants.user': 1 });
 
 module.exports = mongoose.model('Group', groupSchema);

@@ -1,19 +1,39 @@
-// routes/clubs.js
+// routes/club.js
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const multer = require('multer');
-const path = require('path');
+const role = require('../middleware/role');
 const clubController = require('../controllers/clubController');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, `club-${Date.now()}${path.extname(file.originalname)}`),
-});
-const upload = multer({ storage });
+// @route   POST api/clubs
+// @desc    Create a new club
+// @access  Admin
+router.post(
+    '/',
+    auth,
+    role(['Admin']),
+    clubController.createClub
+);
 
-router.post('/create', auth, upload.single('media'), clubController.createClub);
-router.post('/:id/add-expense', auth, clubController.addExpense);
-router.get('/:id', auth, clubController.getClubDetails);
+// @route   GET api/clubs
+// @desc    Get all clubs
+// @access  Authenticated Users
+router.get('/', auth, clubController.getAllClubs);
+
+// @route   GET api/clubs/:clubId
+// @desc    Get details for a single club
+// @access  Authenticated Users
+router.get('/:clubId', auth, clubController.getClubDetails);
+
+// @route   POST api/clubs/:clubId/join
+// @desc    Request to join a club
+// @access  Authenticated Users (Students)
+router.post('/:clubId/join', auth, clubController.requestToJoinClub);
+
+// @route   POST api/clubs/:clubId/manage-request
+// @desc    Approve or deny a join request
+// @access  Club Organizers
+router.post('/:clubId/manage-request', auth, clubController.manageJoinRequest);
+
 
 module.exports = router;
