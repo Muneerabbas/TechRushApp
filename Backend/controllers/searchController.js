@@ -1,20 +1,37 @@
 // controllers/searchController.js
 const User = require('../models/User');
-const Group = require('../models/Group');
 const Club = require('../models/Club');
 const Event = require('../models/Event');
 
 exports.search = async (req, res, next) => {
   try {
     const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ message: 'Search query is required.' });
+    }
+
     const regex = new RegExp(query, 'i');
 
-    const users = await User.find({ name: regex }).select('name profilePicture');
-    const groups = await Group.find({ name: regex }).select('name');
-    const clubs = await Club.find({ name: regex }).select('name');
-    const events = await Event.find({ title: regex }).select('title');
+    const [users, clubs, events] = await Promise.all([
+      User.find({ name: regex })
+        .select('name profilePicture role') 
+        .limit(10), 
 
-    res.json({ users, groups, clubs, events });
+      Club.find({ name: regex })
+        .select('name coverImage description')
+        .limit(10),
+
+      Event.find({ title: regex, visibility: 'Public' })
+        .select('title coverImage date')
+        .limit(10)
+    ]);
+
+    res.status(200).json({
+      users,
+      clubs,
+      events,
+    });
+
   } catch (error) {
     next(error);
   }

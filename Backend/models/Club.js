@@ -62,7 +62,6 @@ const clubSchema = new mongoose.Schema({
   },
 });
 
-// When a new club is created, the creator is automatically an organizer.
 clubSchema.pre('save', function(next) {
   if (this.isNew && !this.organizers.includes(this.creator)) {
     this.organizers.push(this.creator);

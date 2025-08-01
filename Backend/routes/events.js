@@ -1,20 +1,27 @@
-// routes/events.js
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
+const eventController = require('../controllers/eventController');
 const multer = require('multer');
 const path = require('path');
-const eventController = require('../controllers/eventController');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, `event-${Date.now()}${path.extname(file.originalname)}`),
+  filename: (req, file, cb) => cb(null, `event-cover-${Date.now()}${path.extname(file.originalname)}`),
 });
-const upload = multer({ storage });
+const upload = multer({ storage: storage });
 
-router.post('/create', auth, upload.single('media'), eventController.createEvent);
-router.post('/:id/register', auth, eventController.registerForEvent);
-router.get('/calendar', auth, eventController.getEventsForCalendar);
-router.get('/:id', auth, eventController.getEventDetails);
+router.post(
+    '/',
+    auth,
+    upload.single('coverImage'), 
+    eventController.createEvent
+);
+
+router.get('/', auth,eventController.getAllPublicEvents);
+
+router.get('/:eventId', auth, eventController.getEventDetails); 
+
+router.post('/:eventId/register', auth, eventController.registerForEvent);
 
 module.exports = router;
