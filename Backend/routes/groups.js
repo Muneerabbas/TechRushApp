@@ -3,16 +3,28 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const groupController = require('../controllers/groupController');
+const multer = require('multer');
+const path = require('path');
 
-// --- Group Management ---
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, `group-message-${Date.now()}${path.extname(file.originalname)}`),
+});
+
+const upload = multer({ storage: storage });
+
 router.post('/', auth, groupController.createGroup);
 router.get('/:id', auth, groupController.getGroupDetails);
 
-// --- Group Activity (Messages and Bills) ---
 router.get('/:groupId/activity', auth, groupController.getGroupActivity);
-router.post('/:groupId/messages', auth, groupController.sendGroupMessage);
 
-// --- Bill Splitting & Settlement ---
+router.post(
+    '/:groupId/messages',
+    auth,
+    upload.single('image'), 
+    groupController.sendGroupMessage
+);
+
 router.post('/:groupId/split-bill', auth, groupController.splitBill);
 router.post('/bills/:billId/settle', auth, groupController.settlePayment);
 
