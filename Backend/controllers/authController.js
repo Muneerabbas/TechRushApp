@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs').promises;
 const path = require('path');
 
-// --- User Registration (with Photo) ---
+//User Registeration
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role, description } = req.body;
@@ -27,7 +27,6 @@ exports.register = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     
-    // Check if a file was uploaded and set the path
     const profilePicture = req.file ? `/uploads/${req.file.filename}` : '';
 
     user = new User({
@@ -36,15 +35,14 @@ exports.register = async (req, res, next) => {
       password: hashedPassword,
       role: role || 'Student',
       description: description || '',
-      profilePicture: profilePicture, // Save the path to the database
+      profilePicture: profilePicture,
     });
 
     await user.save();
     
-    // We don't want to send the password back, even the hashed one.
     user.password = undefined;
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '4d' });
 
     res.status(201).json({ token, user });
   } catch (error) {
@@ -53,7 +51,7 @@ exports.register = async (req, res, next) => {
   }
 };
 
-// --- Update Profile (with Photo) ---
+//Profile Photo
 exports.updateProfile = async (req, res, next) => {
   try {
     const { name, description } = req.body;
@@ -64,18 +62,14 @@ exports.updateProfile = async (req, res, next) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Update text fields if provided
     if (name) user.name = name;
     if (description) user.description = description;
 
-    // Check for a new profile picture
     if (req.file) {
-      // If an old picture exists, delete it from the server
       if (user.profilePicture) {
         const oldPath = path.join(__dirname, '..', user.profilePicture);
         await fs.unlink(oldPath).catch(err => console.log("Old profile picture not found, continuing..."));
       }
-      // Set the new picture path
       user.profilePicture = `/uploads/${req.file.filename}`;
     }
 
@@ -87,7 +81,6 @@ exports.updateProfile = async (req, res, next) => {
   }
 };
 
-// --- Other Functions (Unchanged but included for completeness) ---
 
 exports.login = async (req, res, next) => {
   try {
@@ -110,7 +103,6 @@ exports.login = async (req, res, next) => {
 
 exports.getProfile = async (req, res, next) => {
   try {
-    // req.user is attached by the auth middleware
     res.json(req.user);
   } catch (error) {
     next(error);
@@ -127,5 +119,47 @@ exports.getUserProfile = async (req, res, next) => {
   }
 };
 
-exports.addBankDetails = async (req, res, next) => { /* ... unchanged ... */ };
-exports.getBankDetails = async (req, res, next) => { /* ... unchanged ... */ };
+
+exports.addBankDetails = async (req, res, next) => {
+    try {
+        const { phoneNumber } = req.body;
+        if (!phoneNumber) {
+            return res.status(400).json({ message: 'Phone number is required.' });
+        }
+
+        let bankDetails = await BankDetails.findOne({ userId: req.user.id });
+
+        if (bankDetails) {
+            bankDetails.phoneNumber = phoneNumber;
+        } else {
+            bankDetails = new BankDetails({
+                userId: req.user.id,
+                phoneNumber,
+            });
+        }
+
+        await bankDetails.save();
+        res.status(200).json({ message: 'Bank details saved successfully.', bankDetails });
+
+    } catch (error) {
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: error.message });
+        }
+        next(error);
+    }
+};
+
+
+exports.getBankDetails = async (req, res, next) => {
+    try {
+        const bankDetails = await BankDetails.findOne({ userId: req.user.id });
+
+        if (!bankDetails) {
+            return res.status(404).json({ message: 'No bank details found for this user.' });
+        }
+
+        res.status(200).json(bankDetails);
+    } catch (error) {
+        next(error);
+    }
+};

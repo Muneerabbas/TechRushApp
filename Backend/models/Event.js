@@ -27,7 +27,7 @@ const eventSchema = new mongoose.Schema({
   },
   location: {
     type: String,
-    required: [true, 'Event location is required.'],
+    required:[true,'Event Location is needed'],
   },
   coverImage: {
     type: String,
