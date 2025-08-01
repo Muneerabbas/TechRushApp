@@ -2,60 +2,44 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const role = require('../middleware/role'); // Make sure this middleware is required
+const role = require('../middleware/role');
 const clubController = require('../controllers/clubController');
 const multer = require('multer');
 const path = require('path');
 
-// --- Multer Configuration for Club Cover Image Uploads ---
+// --- Multer Configuration ---
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Ensure 'uploads' directory exists
-  },
-  filename: (req, file, cb) => {
-    // Create a unique filename for the club cover image
-    cb(null, `club-cover-${Date.now()}${path.extname(file.originalname)}`);
-  },
+  destination: (req, file, cb) => cb(null, 'uploads/'),
+  filename: (req, file, cb) => cb(null, `club-cover-${Date.now()}${path.extname(file.originalname)}`),
 });
-
 const upload = multer({ storage: storage });
 
-
-// @route   POST api/clubs
-// @desc    Create a new club (with optional cover image)
-// @access  Admin Only
+// Create a Club (Admin Only)
 router.post(
     '/',
     auth, 
-    role(['Admin']), 
+    role(['Admin']),
     upload.single('coverImage'), 
     clubController.createClub
 );
 
-// @route   GET api/clubs
-// @desc    Get all clubs
-// @access  Authenticated Users
-router.get('/', auth, clubController.getAllClubs);
+// Add an Organizer
+router.post('/:clubId/organizers', auth, clubController.addOrganizer);
 
-// @route   GET api/clubs/:clubId
-// @desc    Get details for a single club
-// @access  Authenticated Users
-router.get('/:clubId', auth, clubController.getClubDetails);
+// Get All Clubs
+router.get('/', clubController.getAllClubs);
 
-// @route   POST api/clubs/:clubId/join
-// @desc    Request to join a club
-// @access  Authenticated Users (Students)
+// Get Club Details
+router.get('/:clubId', clubController.getClubDetails);
+
+// Request to Join a Club
 router.post('/:clubId/join', auth, clubController.requestToJoinClub);
 
-// @route   POST api/clubs/:clubId/manage-request
-// @desc    Approve or deny a join request
-// @access  Club Organizers
+// Manage a Join Request
 router.post('/:clubId/manage-request', auth, clubController.manageJoinRequest);
 
-// @route   POST api/clubs/:clubId/organizers
-// @desc    Add a new organizer to the club
-// @access  Existing Club Organizers
-router.post('/:clubId/organizers', auth, clubController.addOrganizer);
+// Pay Membership Fee
+router.post('/:clubId/pay-dues', auth, clubController.payMembershipFee);
 
 
 module.exports = router;

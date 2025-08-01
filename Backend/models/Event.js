@@ -1,40 +1,61 @@
-const mongoose = require('mongoose')
-const eventSchema = new mongoose.Schema(
-{
-    title:{
-        required:true,
-        type:String,
-    },
-    description:{
-        type:String,
-        trim:true,
-    },
-    date:{
-        type:Date,
-        required:true,
-    },
-    club:{
-        type:mongoose.Schema.ObjectId,
-        ref:'CLub',
-        required:true,
-    },
-    creator:{
-        type:mongoose.Schema.ObjectId,
-        ref:'User',
-        required:true,
-    },
-    media:{
-        type:String,
-        default:'',
-    },
-    participants:[{
-        type:mongoose.Schema.ObjectId,
-        ref:'User',
-    }],
-    createdAt:{
-        type:Date,
-        default:Date.now,
-    }
-}
-);
-module.exports = mongoose.model('Event',eventSchema);
+// models/Event.js
+const mongoose = require('mongoose');
+
+const eventSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: [true, 'Event title is required.'],
+    trim: true,
+  },
+  description: {
+    type: String,
+    required: [true, 'Event description is required.'],
+  },
+  club: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Club',
+    required: true,
+  },
+  creator: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  date: {
+    type: Date,
+    required: true,
+  },
+  location: {
+    type: String,
+    required: [true, 'Event location is required.'],
+  },
+  coverImage: {
+    type: String,
+    default: '',
+  },
+  eventType: {
+    type: String,
+    enum: ['Free', 'Paid'],
+    default: 'Free',
+  },
+  ticketPrice: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
+  capacity: {
+    type: Number,
+    min: 1,
+  },
+  attendees: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
+  visibility: {
+    type: String,
+    enum: ['Public', 'ClubOnly'],
+    default: 'Public',
+  },
+}, { timestamps: true });
+
+module.exports = mongoose.model('Event', eventSchema);

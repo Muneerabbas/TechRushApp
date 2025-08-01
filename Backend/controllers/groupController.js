@@ -183,7 +183,6 @@ exports.splitBill = async (req, res, next) => {
     }
   }
 };
-
 exports.settlePayment = async (req, res, next) => {
     const { billId } = req.params;
     const userId = req.user._id;
@@ -196,7 +195,12 @@ exports.settlePayment = async (req, res, next) => {
           session.startTransaction();
         }
 
-        const bill = await Bill.findById(billId).populate('creator', 'name').session(session);
+        // UPDATED: Populate the group name from the bill for the transaction description
+        const bill = await Bill.findById(billId)
+            .populate('creator', 'name')
+            .populate('group', 'name') // <-- This is new
+            .session(session);
+
         if (!bill) {
             if (session) await session.abortTransaction();
             return res.status(404).json({ message: 'Bill not found' });
@@ -212,9 +216,22 @@ exports.settlePayment = async (req, res, next) => {
             return res.status(400).json({ message: 'You have already settled this payment.' });
         }
 
+        // --- NEW: Create a transaction record for payment history ---
+        const newTransaction = new Transaction({
+            sender: userId,
+            receiver: bill.creator._id, // Payment goes to the person who created the bill
+            amount: split.amount,
+            description: `Settled bill: "${bill.description}" in group "${bill.group.name}"`,
+            status: 'Completed'
+        });
+        await newTransaction.save({ session });
+        // --- End of new code ---
+
+        // Mark the bill as paid
         split.paid = true;
         await bill.save({ session });
 
+        // Notify the bill creator
         if (!bill.creator._id.equals(userId)) {
             const notification = new Notification({
                 user: bill.creator._id,

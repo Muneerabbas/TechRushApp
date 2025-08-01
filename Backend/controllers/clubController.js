@@ -2,18 +2,17 @@
 const Club = require('../models/Club');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Transaction = require('../models/Transaction');
 const logger = require('../utils/logger');
-const fs = require('fs').promises; // Required for file system operations
+const fs = require('fs').promises;
 
-/**
- * @description Create a new club, now with optional file upload.
- */
+// Create a Club
 exports.createClub = async (req, res, next) => {
   try {
     const { name, description, membershipType, subscriptionFee, subscriptionFrequency } = req.body;
 
     if (!name || !description) {
-      if (req.file) await fs.unlink(req.file.path); 
+      if (req.file) await fs.unlink(req.file.path);
       return res.status(400).json({ message: 'Club name and description are required.' });
     }
 
@@ -28,7 +27,6 @@ exports.createClub = async (req, res, next) => {
         return res.status(400).json({ message: `A club with the name "${name}" already exists.` });
     }
 
-    // Set the path for the cover image if a file was uploaded
     const coverImage = req.file ? `/uploads/${req.file.filename}` : '';
 
     const club = new Club({
@@ -42,10 +40,9 @@ exports.createClub = async (req, res, next) => {
     });
 
     await club.save();
-    logger.info(`Club "${name}" created by ${req.user.email}`);
+    logger.info(`Club "${name}" created by admin ${req.user.email}`);
     res.status(201).json({ message: 'Club created successfully', club });
   } catch (error) {
-    // If any other error occurs after file upload, delete the file
     if (req.file) {
       await fs.unlink(req.file.path).catch(err => console.error("Error deleting file on failure:", err));
     }
@@ -53,9 +50,7 @@ exports.createClub = async (req, res, next) => {
   }
 };
 
-/**
- * @description Add a new organizer to a club.
- */
+// Add a new organizer
 exports.addOrganizer = async (req, res, next) => {
     try {
         const { clubId } = req.params;
@@ -66,12 +61,10 @@ exports.addOrganizer = async (req, res, next) => {
             return res.status(404).json({ message: 'Club not found.' });
         }
 
-        // Check if the current user is an organizer
         if (!club.organizers.includes(req.user._id)) {
             return res.status(403).json({ message: 'Forbidden. Only existing organizers can add new ones.' });
         }
 
-        // Check if the new organizer is a valid user and not already an organizer
         const newOrganizer = await User.findById(newOrganizerId);
         if (!newOrganizer) {
             return res.status(404).json({ message: 'User to be added as organizer not found.' });
@@ -81,12 +74,10 @@ exports.addOrganizer = async (req, res, next) => {
         }
 
         club.organizers.push(newOrganizerId);
-        // If the new organizer was a regular member, remove them from the members list
         club.members = club.members.filter(member => !member.user.equals(newOrganizerId));
         
         await club.save();
 
-        // Notify the new organizer
         await new Notification({
             user: newOrganizerId,
             message: `You have been made an organizer for the club: "${club.name}".`,
@@ -102,9 +93,7 @@ exports.addOrganizer = async (req, res, next) => {
     }
 };
 
-/**
- * @description Get a list of all available clubs.
- */
+// Get all clubs
 exports.getAllClubs = async (req, res, next) => {
     try {
         const clubs = await Club.find().select('name description coverImage membershipType');
@@ -114,9 +103,7 @@ exports.getAllClubs = async (req, res, next) => {
     }
 };
 
-/**
- * @description Get detailed information about a single club.
- */
+// Get club details
 exports.getClubDetails = async (req, res, next) => {
     try {
         const club = await Club.findById(req.params.clubId)
@@ -133,9 +120,7 @@ exports.getClubDetails = async (req, res, next) => {
     }
 };
 
-/**
- * @description Allow a student to request to join a club.
- */
+// Request to join a club
 exports.requestToJoinClub = async (req, res, next) => {
     try {
         const club = await Club.findById(req.params.clubId);
@@ -170,9 +155,7 @@ exports.requestToJoinClub = async (req, res, next) => {
     }
 };
 
-/**
- * @description Allow a club organizer to approve or deny a join request.
- */
+// Manage a join request
 exports.manageJoinRequest = async (req, res, next) => {
     try {
         const { studentId, action } = req.body;
@@ -192,15 +175,25 @@ exports.manageJoinRequest = async (req, res, next) => {
         if (!club.pendingRequests.includes(studentId)) {
             return res.status(404).json({ message: 'This user does not have a pending request.' });
         }
-        club.pendingRequests = club.pendingRequests.filter(id => !id.equals(studentId));
-
+        
         let notificationMessage = '';
+        let responseMessage = '';
+
         if (action === 'approve') {
-            club.members.push({ user: studentId });
-            notificationMessage = `Your request to join "${club.name}" has been approved.`;
+            if (club.membershipType === 'Subscription') {
+                notificationMessage = `Your request to join "${club.name}" has been approved! Please pay the fee of ₹${club.subscriptionFee} to finalize your membership.`;
+                responseMessage = `Request approved. User has been notified to pay the membership fee.`;
+            } else {
+                club.pendingRequests = club.pendingRequests.filter(id => !id.equals(studentId));
+                club.members.push({ user: studentId });
+                notificationMessage = `Your request to join "${club.name}" has been approved. Welcome to the club!`;
+                responseMessage = `Request has been successfully approved.`;
+            }
             logger.info(`Request from ${studentId} to join "${club.name}" was approved by ${req.user.email}`);
         } else {
-            notificationMessage = `Your request to join "${club.name}" has been denied.`;
+            club.pendingRequests = club.pendingRequests.filter(id => !id.equals(studentId));
+            notificationMessage = `We're sorry, but your request to join "${club.name}" has been denied.`;
+            responseMessage = `Request has been successfully denied.`;
             logger.info(`Request from ${studentId} to join "${club.name}" was denied by ${req.user.email}`);
         }
         
@@ -213,7 +206,55 @@ exports.manageJoinRequest = async (req, res, next) => {
             relatedId: club._id
         }).save();
 
-        res.status(200).json({ message: `Request has been successfully ${action}d.`, club });
+        res.status(200).json({ message: responseMessage, club });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Pay membership fee
+exports.payMembershipFee = async (req, res, next) => {
+    try {
+        const club = await Club.findById(req.params.clubId).populate('organizers');
+        if (!club) {
+            return res.status(404).json({ message: 'Club not found.' });
+        }
+        
+        const userId = req.user._id;
+
+        if (club.membershipType !== 'Subscription') {
+            return res.status(400).json({ message: 'This club does not require a payment.' });
+        }
+        if (!club.pendingRequests.includes(userId)) {
+            return res.status(400).json({ message: 'You do not have an approved request to pay for.' });
+        }
+        if (club.members.some(m => m.user.equals(userId))) {
+            return res.status(400).json({ message: 'You are already a member of this club.' });
+        }
+
+        const newTransaction = new Transaction({
+            sender: userId,
+            receiver: club.organizers[0]._id,
+            amount: club.subscriptionFee,
+            description: `Membership fee for ${club.name}`,
+            status: 'Completed'
+        });
+        await newTransaction.save();
+
+        club.pendingRequests = club.pendingRequests.filter(id => !id.equals(userId));
+        club.members.push({ user: userId });
+        await club.save();
+
+        await new Notification({
+            user: userId,
+            message: `Payment successful! Your membership for "${club.name}" is now active. Welcome!`,
+            type: 'Club',
+            relatedId: club._id
+        }).save();
+
+        logger.info(`${req.user.email} paid membership for club "${club.name}"`);
+        res.status(200).json({ message: 'Payment successful! You are now a member of the club.', club });
+
     } catch (error) {
         next(error);
     }
