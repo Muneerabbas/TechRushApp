@@ -28,6 +28,7 @@ const userSchema = new mongoose.Schema({
   description: {
     type: String,
     trim: true,
+    required:false,
     default: '',
   },
   profilePicture: {
