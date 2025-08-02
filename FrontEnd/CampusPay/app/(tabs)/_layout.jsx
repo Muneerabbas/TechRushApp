@@ -12,12 +12,13 @@ export default function _layout() {
 
           headerShown: false,
           tabBarStyle: {
+            
             position: 'absolute',
             height: 90,
             borderTopLeftRadius: 40,
             borderTopRightRadius: 40,
             backgroundColor: 'white',
-            overflow: 'hidden', // needed for Android clippin
+            overflow: 'hidden',
           }
         }}>
 
@@ -26,7 +27,10 @@ export default function _layout() {
           
           options={{
             title: 'Social',
-            // tabBarIcon: ({color})=><Ionicons name="settings" size={20} color= '#333333' />,
+            tabBarLabelStyle: {
+              fontFamily: 'Poppins-SemiBold', 
+              fontSize: 10,
+            },
             tabBarIcon:({color})=><Ionicons name="happy-outline" size={25} color='#333333'  />,
           tabBarActiveBackgroundColor:"#E5C54F"
 
@@ -38,6 +42,10 @@ export default function _layout() {
 
           options={{
             title: 'Pay',
+            tabBarLabelStyle: {
+              fontFamily: 'Poppins-SemiBold', 
+              fontSize: 10,
+            },
             tabBarIcon:({color})=><Ionicons name="cash-outline" size={25} color='#333333'  />,
             tabBarActiveBackgroundColor:"#E5C54F"
 
@@ -50,7 +58,10 @@ export default function _layout() {
           
           options={{
             title: 'Transctions',
-            // tabBarIcon: ({color})=><Ionicons name="settings" size={20} color= '#333333' />,
+            tabBarLabelStyle: {
+              fontFamily: 'Poppins-SemiBold', 
+              fontSize: 10,
+            },
             tabBarIcon:({color})=><Ionicons name="receipt-outline" size={25} color='#333333'  />,
             tabBarActiveBackgroundColor:"#E5C54F"
 
