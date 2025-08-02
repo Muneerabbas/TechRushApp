@@ -13,7 +13,6 @@ exports.register = async (req, res, next) => {
     const { name, email, password, role, description } = req.body;
 
     if (!name || !email || !password) {
-      // If validation fails after a file was uploaded, delete the orphaned file.
       if (req.file) await fs.unlink(req.file.path);
       return res.status(400).json({ message: 'Name, email, and password are required.' });
     }
@@ -51,7 +50,6 @@ exports.register = async (req, res, next) => {
   }
 };
 
-//Profile Photo
 exports.updateProfile = async (req, res, next) => {
   try {
     const { name, description } = req.body;

@@ -9,13 +9,12 @@ const authMiddleware = async (req, res, next) => {
 
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     try {
-      // Get token from header
+      // Getting the token
       token = req.headers.authorization.split(' ')[1];
 
-      // Verify token
+      //Token Verification
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-      // Attach user to the request object
       req.user = await User.findById(decoded.id).select('-password');
 
       if (!req.user) {

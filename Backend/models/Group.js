@@ -20,7 +20,7 @@ const groupSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
       },
-      _id: false // To prevent creating an _id for each participant sub-document
+      _id: false 
     },
   ],
   description: {
@@ -33,7 +33,7 @@ const groupSchema = new mongoose.Schema({
   },
 });
 
-// This ensures efficient queries on the participants array.
+// Efficient queries
 groupSchema.index({ 'participants.user': 1 });
 
 module.exports = mongoose.model('Group', groupSchema);

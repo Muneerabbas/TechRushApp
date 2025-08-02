@@ -4,7 +4,7 @@ const Group = require('../models/Group');
 const Notification = require('../models/Notification');
 
 const scheduleReminders = () => {
-  cron.schedule('0 8 * * *', async () => { // Every day at 8 AM
+  cron.schedule('0 8 * * *', async () => { 
     try {
       const groups = await Group.find().populate('participants.user', 'name');
       for (const group of groups) {

@@ -103,7 +103,7 @@ exports.getAllClubs = async (req, res, next) => {
     }
 };
 
-// Get club details
+//GetclubDetails Request
 exports.getClubDetails = async (req, res, next) => {
     try {
         const club = await Club.findById(req.params.clubId)
@@ -120,7 +120,7 @@ exports.getClubDetails = async (req, res, next) => {
     }
 };
 
-// Request to join a club
+//JoinClubRequest
 exports.requestToJoinClub = async (req, res, next) => {
     try {
         const club = await Club.findById(req.params.clubId);
