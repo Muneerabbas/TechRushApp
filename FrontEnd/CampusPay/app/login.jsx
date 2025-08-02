@@ -1,27 +1,28 @@
 import { Text, View, StyleSheet, TextInput,Image,ScrollView,TouchableOpacity} from 'react-native';
 import * as Font from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
-import colors from '../../assets/utils/colors';
+import colors from './assets/utils/colors';
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 
 
 export default function Login({navigation}) {
   const [password, setPassword] = useState('');
+  const router = useRouter();
   const [secure, setSecure] = useState(true); // hide by default
-  const [fontsLoaded] = Font.useFonts({
-    'Poppins-Bold': require('../../assets/fonts/Poppins-Bold.ttf'),
-    'Poppins-Regular': require('../../assets/fonts/Poppins-Regular.ttf'),
-    'Poppins-SemiBold': require('../../assets/fonts/Poppins-SemiBold.ttf'),
-  });
-
+ const [fontsLoaded] = Font.useFonts({
+     'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
+     'Poppins-Regular': require('./assets/fonts/Poppins-Regular.ttf'),
+     'Poppins-SemiBold': require('./assets/fonts/Poppins-SemiBold.ttf'),
+   });
   if (!fontsLoaded) return <AppLoading />;
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.heading}>Login To</Text>
   <View style={{flexDirection:'row', justifyContent:"flex-start", alignContent:"center" , gap:12,margin:10,}}> 
  <View>  <Image
-        source={require('../../assets/images/freepik__upload__59206.png')} 
+        source={require('./assets/images/freepik__upload__59206.png')} 
         style={styles.image}
       /></View>
            <Text style={{textAlign:"center", alignSelf:"center", fontFamily:"Poppins-Bold", color:colors.text,
@@ -107,7 +108,7 @@ fontSize:30}}>Campus Pay!</Text>
 
  <TouchableOpacity
               style={styles.button}
-
+              onPress={() => router.replace('./(tabs)')}
             >
              <Text style={styles.logintxt}>Login</Text>
             </TouchableOpacity>
@@ -115,21 +116,20 @@ fontSize:30}}>Campus Pay!</Text>
 <Text style={styles.noaccountText}>
                 Don't have an account?
               </Text>
-              <TouchableOpacity onPress={() =>
-        navigation.navigate('Signup')}>
+              <TouchableOpacity onPress={() => router.navigate('/signup')}>
                 <Text style={styles.signuptext}>
                   SignUp
                 </Text></TouchableOpacity></View>
                 
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
 
-
+flex:1,
     alignContent: 'center',
 justifyContent:"center",
     backgroundColor: '#ffffff',

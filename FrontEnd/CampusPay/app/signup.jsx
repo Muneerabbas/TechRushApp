@@ -8,7 +8,9 @@ import {
   } from 'react-native';
   import * as Font from 'expo-font';
   import { Ionicons } from '@expo/vector-icons';
-  import colors from '../../assets/utils/colors';
+  import colors from './assets/utils/colors';
+  import { useRouter } from 'expo-router';
+
   
   import { useState } from 'react';
   
@@ -22,12 +24,14 @@ import {
     const [passwordValid, setPasswordValid] = useState(false);
     const [confirmPassword, setConfirmPassword] = useState('');
     const [secureConfirm, setSecureConfirm] = useState(true);
-    const [fontsLoaded] = Font.useFonts({
-        'Poppins-Bold': require('../../assets/fonts/Poppins-Bold.ttf'),
-        'Poppins-Regular': require('../../assets/fonts/Poppins-Regular.ttf'),
-        'Poppins-SemiBold': require('../../assets/fonts/Poppins-SemiBold.ttf'),
-      });
-    
+    const router = useRouter();
+
+const [fontsLoaded] = Font.useFonts({
+    'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
+    'Poppins-Regular': require('./assets/fonts/Poppins-Regular.ttf'),
+    'Poppins-SemiBold': require('./assets/fonts/Poppins-SemiBold.ttf'),
+  });
+
     function handleNameverify(e) {
       setName(e);
       setNameverify(e.length > 1);
@@ -48,7 +52,10 @@ import {
     if (!fontsLoaded) return <AppLoading />;
   
     return (
-      <ScrollView style={styles.container}>
+      <View
+  style={styles.container}
+
+>
         <Text style={[styles.heading, { fontFamily: 'Poppins-SemiBold' }]}>SignUp For</Text>
         <Text style={styles.heading}>Campus Pay!</Text>
   
@@ -156,7 +163,7 @@ import {
           {/* Navigation Links */}
           <View style={{ flexDirection: 'row', gap: 5, justifyContent: 'center' }}>
             <Text style={styles.noaccountText}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <TouchableOpacity onPress={() => router.navigate('/login')}>
               <Text style={styles.signuptext}>Login</Text>
             </TouchableOpacity>
           </View>
@@ -168,14 +175,14 @@ import {
             </TouchableOpacity>
           </View>
         </View>
-      </ScrollView>
+      </View>
     );
   }
   
   const styles = StyleSheet.create({
     container: {
-      alignContent: 'center',
-      justifyContent: 'center',
+      flex:1,
+     justifyContent:"center",
       backgroundColor: '#ecf0f1',
       padding: 5,
     },
