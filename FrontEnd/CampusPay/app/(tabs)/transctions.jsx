@@ -1,7 +1,8 @@
+//Campuspay/apps/(tabs)
 import { useEffect } from "react";
 import { SafeAreaView, Text, View, StyleSheet,FlatList } from "react-native";
 import { useFonts } from 'expo-font';
-import colors from "../assets/utils/colors";
+import colors from "../../assets/utils/colors";
 export default function Transctions() {
   useEffect(() => {
     fetch('https://jsonplaceholder.typicode.com/todos/1')
@@ -11,9 +12,9 @@ export default function Transctions() {
 
 
   const [fontsLoaded] = useFonts({
-    // 'Poppins-Bold': require('../assests/fonts/Poppins-Bold.ttf'),
-    'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'),
-    'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf')
+     'Poppins-Bold': require('../../assets/fonts/Poppins-Bold.ttf'),
+    'Poppins-Regular': require('../../assets/fonts/Poppins-Regular.ttf'),
+    'Poppins-SemiBold': require('../../assets/fonts/Poppins-SemiBold.ttf')
   });
 
 

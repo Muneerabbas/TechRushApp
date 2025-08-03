@@ -6,22 +6,21 @@ import {
     TextInput,
     ScrollView,
     TouchableOpacity,
+    Alert, 
   } from "react-native";
-  import Alert  from 'react-native';
   
-  // import * as ImagePicker from 'expo-image-picker';
+  import * as ImagePicker from 'expo-image-picker'; 
   
-  
-  import colors from "../assets/utils/colors";
+  import colors from "../../assets/utils/colors";
   import { Ionicons } from "@expo/vector-icons";
   import * as Font from 'expo-font';
-  import  { useEffect, useState } from 'react';
+  import { useState } from 'react'; 
   
-  export default function index() {
+  export default function Index() {
     const [fontsLoaded] = Font.useFonts({
-      // 'Poppins-Bold': require('../assests/fonts/Poppins-Bold.ttf'),
-      'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'),
-      'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf')
+     'Poppins-Bold': require('../../assets/fonts/Poppins-Bold.ttf'),
+      'Poppins-Regular': require('../../assets/fonts/Poppins-Regular.ttf'),
+      'Poppins-SemiBold': require('../../assets/fonts/Poppins-SemiBold.ttf')
     });
     const [imageUri, setImageUri] = useState(null);
   
@@ -35,11 +34,9 @@ import {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 1,
-  
       });
     
       if (!result.canceled) {
-  
         setImageUri(result.assets[0].uri);
       }
     };
@@ -49,7 +46,7 @@ import {
         <View style={styles.main}>
           <TouchableOpacity onPress={handleOpenCamera}>
           <Image
-            source={require("../assets/images/qr-code.png")}
+            source={require("../../assets/images/qr-code.png")}
             style={styles.image}
           /></TouchableOpacity>
         </View>
@@ -196,7 +193,6 @@ import {
   
   const styles = StyleSheet.create({
     container: {
-  
       padding: 15,
       verticalAlign:"center",
       flex:1,
@@ -204,9 +200,7 @@ import {
       alignContent: "center",
       justifyContent: "space-around",
       paddingBottom: 150,
-      
     },
-  
     main: {
       width: 150,
       height: 150,
@@ -215,7 +209,6 @@ import {
       alignSelf: "center",
       backgroundColor: colors.primary,
     },
-  
     button: {
       width: "20%",
       height: 50,
@@ -227,11 +220,11 @@ import {
     },
     logintxt: {
       fontSize: 15,
-      textAlign:"center",         width:'100%',
+      textAlign:"center",
+      width:'100%',
       fontFamily: "Poppins-SemiBold",
       color: colors.black,
     },
-   
     favperson: {
       backgroundColor: colors.background,
       height: 60,
@@ -244,16 +237,12 @@ import {
       width: '75%',
       height: 50,
       alignSelf: "center",
-  
       borderRadius: 15,
       backgroundColor: "white",
       fontFamily: "Poppins-Regular",
       paddingLeft: 10,
       flexDirection: "row",
-  
-      alignSelf: "center",
     },
-  
     image: {
       height: 100,
       width: 100,
@@ -263,4 +252,3 @@ import {
       marginTop: 10,
     },
   });
-  
