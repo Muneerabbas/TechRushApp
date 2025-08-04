@@ -45,7 +45,7 @@ const clubsData = [
     coverImage: "/uploads/club-cover-1754017453003.png"
   }
 ];
-//these are the data
+
 const eventData = [
   {
     _id: '1',
