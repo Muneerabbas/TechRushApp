@@ -2,6 +2,9 @@ import { Ionicons } from '@expo/vector-icons'
 import { Tabs } from 'expo-router'
 import React, { Component,useState } from 'react'
 import { Text, View } from 'react-native'
+import axios from 'axios';
+
+axios.defaults.baseURL = 'https://vienna-remarkable-think-asylum.trycloudflare.com/api'
 
 export default function _layout() {
  

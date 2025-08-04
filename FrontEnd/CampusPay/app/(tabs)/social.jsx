@@ -1,10 +1,10 @@
-import { useEffect } from "react";
+import { useEffect,useState } from "react";
 import { SafeAreaView, Text, View, StyleSheet,FlatList, ScrollView,Image } from "react-native";
 import { useFonts } from 'expo-font';
 import colors from "../assets/utils/colors";
 
 import { Ionicons } from '@expo/vector-icons';
-
+import { RefreshControl } from "react-native";
 export default function Social() {
 
 
@@ -45,6 +45,14 @@ export default function Social() {
     },
   ];
   
+  const onRefresh = async () => {
+    setRefreshing(true);
+   
+
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  };
 
   const renderCard = ({ item }) => {
     return (
@@ -64,9 +72,19 @@ export default function Social() {
     );
   };
 
+  const [refreshing, setRefreshing] = useState(false);
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }} 
+    
+    refreshControl={
+      <RefreshControl
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        colors={[colors.white]} 
+        progressBackgroundColor={colors.primary}
+      />}
+    >
     <View style={styles.container}>
     
     <View>  <Text style={styles.heading}>Clubs And Events</Text>
@@ -78,6 +96,7 @@ export default function Social() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
+        
         />
       </View>
       </View> <View>  <Text style={styles.heading}>Campus OLX</Text>
@@ -128,7 +147,7 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 22,
-    fontFamily: 'Poppins-SemiBold',
+    fontFamily: 'Poppins-Bold',
     marginBottom: 10,
   },
   scrollSection: {

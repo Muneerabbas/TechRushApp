@@ -2,7 +2,9 @@ import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View } from 'react-native';
+import axios from 'axios';
 
+axios.defaults.baseURL = 'https://vienna-remarkable-think-asylum.trycloudflare.com/api'
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -25,5 +27,5 @@ export default function Index() {
     );
   }
 
-  return isLoggedIn ? <Redirect href="/(tabs)" /> : <Redirect href="/(tabs)" />;
+  return isLoggedIn ? <Redirect href="/(tabs)" /> : <Redirect href="/startup" />;
 }

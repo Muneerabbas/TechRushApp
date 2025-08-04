@@ -21,7 +21,7 @@ export default function Login() {
       userdata.append('password', password);
   
       const res = await axios.post(
-        `https://eu-practitioners-manor-arrival.trycloudflare.com/api/auth/login`,
+        `/auth/login`,
         userdata,
         {
           headers: {

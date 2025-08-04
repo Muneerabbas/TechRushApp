@@ -4,13 +4,15 @@ import { useFonts } from "expo-font";
 import colors from "../assets/utils/colors";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Ionicons } from "@expo/vector-icons";
+import { RefreshControl } from "react-native";
 export default function Transctions() {
   useEffect(() => {
     getData();
   }, []);
 
   const [fontsLoaded] = useFonts({
-    // 'Poppins-Bold': require('../assests/fonts/Poppins-Bold.ttf'),
+    "Poppins-Bold": require("../assets/fonts/Poppins-Bold.ttf"),
     "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
     "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
   });
@@ -23,7 +25,7 @@ export default function Transctions() {
     const userid = await AsyncStorage.getItem("userID");
     setUserID(userid);
     const res = await axios.get(
-      `https://eu-practitioners-manor-arrival.trycloudflare.com/api/transactions/history`,
+      `transactions/history`,
 
       {
         headers: {
@@ -37,16 +39,15 @@ export default function Transctions() {
   function formatDateTime(dateString) {
     const date = new Date(dateString);
     const options = {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: true,
     };
-    return date.toLocaleString('en-IN', options); // Format: "03 Aug 2025, 10:45 AM"
+    return date.toLocaleString("en-IN", options); // Format: "03 Aug 2025, 10:45 AM"
   }
-  
 
   // const renderItem = ({ item }) => (
   //   <View style={styles.card}>
@@ -58,35 +59,78 @@ export default function Transctions() {
   // setcredited(true)
 
   // }}
+  const [refreshing, setRefreshing] = useState(false);
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    SetData([]);
+
+    setTimeout(() => {
+      setRefreshing(false);
+    }, await getData());
+  };
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Transaction History</Text>
 
       <View style={styles.main}>
         <FlatList
+          showsVerticalScrollIndicator={false}
           data={data}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              progressBackgroundColor={colors.secondary}
+            />
+          }
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
             <View
               style={[
                 styles.card,
-                userID !== item.receiver._id ?{ backgroundColor: "#FFAFAF" }:{ backgroundColor: "#DFF7E2" },
+                userID !== item.receiver._id
+                  ? { backgroundColor: "#FFAFAF" }
+                  : { backgroundColor: "#DFF7E2" },
               ]}
             >
               <View style={{}}>
                 {userID == item.receiver._id ? (
-                  <Text style={[styles.title]}>Credited</Text>
+                  <View style={{ flexDirection: "row" }}>
+                    <Text style={[styles.title, { color: "#228B22" }]}>
+                      Credited{" "}
+                    </Text>{" "}
+                    <Ionicons
+                      name="arrow-down-circle-outline"
+                      size={25}
+                      color={"#228B22"}
+                    />
+                  </View>
                 ) : (
-                  <Text style={[styles.title]}>Debited</Text>
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    <Text style={[styles.title, { color: "#CD1C18" }]}>
+                      Debited
+                    </Text>{" "}
+                    <Ionicons
+                      name="arrow-up-circle-outline"
+                      size={25}
+                      color={"#CD1C18"}
+                    />
+                  </View>
                 )}
-                <Text style={styles.jokeText}>
-                  {item.amount}rs to {item.receiver.name}
-                </Text>
+                {userID == item.receiver._id ? (
+                  <Text style={styles.textstyle}>
+                    {item.amount}rs By {item.sender.name}
+                  </Text>
+                ) : (
+                  <Text style={styles.textstyle}>
+                    {item.amount}rs To {item.receiver.name}
+                  </Text>
+                )}
               </View>
 
               <Text style={[styles.timetxt, { textAlign: "right" }]}>
-              {formatDateTime(item.createdAt)}
+                {formatDateTime(item.createdAt)}
               </Text>
             </View>
           )}
@@ -108,7 +152,7 @@ const styles = StyleSheet.create({
 
     marginBottom: 10,
     marginLeft: 10,
-    fontFamily: "Poppins-SemiBold",
+    fontFamily: "Poppins-Bold",
   },
   main: {
     height: "80%",
@@ -127,7 +171,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     alignSelf: "center",
   },
-  jokeText: {
+  textstyle: {
     fontSize: 15,
     color: colors.black,
     fontFamily: "Poppins-Regular",

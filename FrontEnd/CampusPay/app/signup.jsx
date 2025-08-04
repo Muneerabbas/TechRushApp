@@ -27,7 +27,6 @@ import axios from 'axios'
     const [secureConfirm, setSecureConfirm] = useState(true);
     const router = useRouter();
 
-const URL = 'https://holmes-restaurants-able-configuring.trycloudflare.com';
 
 
 const [fontsLoaded] = Font.useFonts({
@@ -60,7 +59,7 @@ try {
   userdata.append('email',email)
   userdata.append('password',password)
   const res=
-  await axios.post(`https://designated-flame-series-douglas.trycloudflare.com/api/auth/register`,userdata, {
+  await axios.post(`auth/register`,userdata, {
     headers: {
       'Content-Type': 'multipart/form-data', 
     },
