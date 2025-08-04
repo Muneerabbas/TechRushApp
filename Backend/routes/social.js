@@ -6,7 +6,7 @@ const socialController = require('../controllers/socialController');
 const multer = require('multer');
 const path = require('path');
 
-// Post Images 
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/'),
   filename: (req, file, cb) => cb(null, `social-post-${Date.now()}${path.extname(file.originalname)}`),

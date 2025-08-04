@@ -1,277 +1,183 @@
-import { Text, View, StyleSheet, TextInput,Image,ScrollView,TouchableOpacity} from 'react-native';
-import * as Font from 'expo-font';
+import { Text, View, StyleSheet, TextInput, Image, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import colors from './assets/utils/colors';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Alert } from 'react-native';
-import axios from 'axios';
-
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
-
-
-
-  async function handleSubmit() {
-    try {
-      const userdata = new FormData();
-      userdata.append('email', email);
-      userdata.append('password', password);
-  
-      const res = await axios.post(
-        `https://eu-practitioners-manor-arrival.trycloudflare.com/api/auth/login`,
-        userdata,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-  
-      const token = res.data.token;
-    const userID = res.data.user._id; 
-
-      if (token) {
-        await AsyncStorage.setItem('authToken', token);
-        await AsyncStorage.setItem("userID", userID);
-
-        await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
-
-        const storedToken = await AsyncStorage.getItem('authToken');
-        console.log('Token from AsyncStorage:', storedToken);
-  
-        Alert.alert('Success', `Login Successful! Token stored: ${storedToken}`);
-        router.replace('/(tabs)');
-  
-      } else {
-        Alert.alert('Failed', 'Token not found in response');
-        router.replace('./startup');
-      }
-    } catch (error) {
-      console.error('Login error:', error.response?.data || error.message);
-      Alert.alert('Failed', 'Login Failed!');
-
-    }
-  }
-  
-  const [email,setEmail]=useState('')
-
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [secure, setSecure] = useState(true);
   const router = useRouter();
-  const [secure, setSecure] = useState(true); // hide by default
- const [fontsLoaded] = Font.useFonts({
-     'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
-     'Poppins-Regular': require('./assets/fonts/Poppins-Regular.ttf'),
-     'Poppins-SemiBold': require('./assets/fonts/Poppins-SemiBold.ttf'),
-   });
-  if (!fontsLoaded) return <AppLoading />;
+  const { login, loading } = useAuth();
+
+  const handleLogin = () => {
+    login(email, password).catch(err => {
+      Alert.alert("Login Failed", err.response?.data?.message || "Please check your credentials.");
+    });
+  };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Login To</Text>
-  <View style={{flexDirection:'row', justifyContent:"flex-start", alignContent:"center" , gap:12,margin:10,}}> 
- <View>  <Image
-        source={require('./assets/images/freepik__upload__59206.png')} 
-        style={styles.image}
-      /></View>
-           <Text style={{textAlign:"center", alignSelf:"center", fontFamily:"Poppins-Bold", color:colors.text,
-fontSize:30}}>Campus Pay!</Text>
-</View>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.heading}>Login to</Text>
+
+      <View style={styles.logoRow}>
+        <Image source={require('./assets/images/freepik__upload__59206.png')} style={styles.image} />
+        <Text style={styles.logoText}>Campus Pay!</Text>
+      </View>
+
       <View style={styles.main}>
-      <View
-          style={{
-            backgroundColor: colors.white,
-            height: 90,
-            width: 90,
-            margin: 10,
-            borderWidth:2,
-            borderColor:colors.primary,
-            borderRadius: 90,
-            padding: 4,
-            position:"absolute",
-            top:-60,
-            overflow:"none",
-            alignSelf:"center",
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-          <Ionicons name="person" size={50} color= '#333333' />
+        <View style={styles.profileIcon}>
+          <Ionicons name="person" size={50} color="#333" />
         </View>
-         
-      //Email Input
-        <View style={[styles.input,{marginTop:40}]}>
-          <View
-            style={{
-              backgroundColor: colors.background,
-              height: 30,
-              width: 30,
-              marginTop: 10,
-              borderRadius: 50,
-              alignItems: 'center',
-              justifyContent:"center",
-      
-            }}>
+
+        <View style={[styles.inputBox, { marginTop: 50 }]}>
+          <View style={styles.iconWrap}>
             <Ionicons name="person" size={20} color="white" />
           </View>
           <TextInput
             placeholder="Enter Email ID"
+            value={email}
             onChangeText={setEmail}
-
-            style={{
-              marginHorizontal: 10,
-
-              fontFamily: 'Poppins-Regular',
-            }}></TextInput>
+            style={styles.textInput}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
         </View>
 
-        //Password Input
-         <View style={[{ marginTop: 25 }, styles.input]}>
-  {/* 🔒 Password Icon */}
-  <View style={styles.iconWrapper}>
-    <Ionicons name="key" size={20} color="white" />
-  </View>
+        <View style={[styles.inputBox, { marginTop: 20 }]}>
+          <View style={styles.iconWrap}>
+            <Ionicons name="key" size={20} color="white" />
+          </View>
+          <TextInput
+            placeholder="Enter Your Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={secure}
+            style={styles.textInput}
+          />
+          <TouchableOpacity onPress={() => setSecure(!secure)} style={styles.eyeWrap}>
+            <Ionicons name={secure ? 'eye-off' : 'eye'} size={22} color="#555" />
+          </TouchableOpacity>
+        </View>
 
-  {/* 🔤 Password Input */}
-  <TextInput
-    placeholder="Enter Your Password"
-    value={password}
-    onChangeText={setPassword}
-    secureTextEntry={secure}
-    style={{
-      flex: 1,
-      marginHorizontal: 10,
-      fontFamily: 'Poppins-Regular',
-    }}
-  />
+        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+          <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Login'}</Text>
+        </TouchableOpacity>
 
-  {/* 👁️ Eye Icon */}
-  <TouchableOpacity
-    onPress={() => setSecure(!secure)}
-    style={styles.eyeWrapper}
-  >
-    <Ionicons
-      name={secure ? 'eye-off' : 'eye'}
-      size={24}
-      color="#555"
-    />
-  </TouchableOpacity>
-</View>
-
-
- <TouchableOpacity
-              style={styles.button}
-              // onPress={() => router.replace('./(tabs)'),}
-              onPress={handleSubmit}
-            >
-             <Text style={styles.logintxt}>Login</Text>
-            </TouchableOpacity>
-<View style={{flexDirection:'row', gap:5,justifyContent:"center"}}>
-<Text style={styles.noaccountText}>
-                Don't have an account?
-              </Text>
-              <TouchableOpacity onPress={() => router.navigate('/signup')}>
-                <Text style={styles.signuptext}>
-                  SignUp
-                </Text></TouchableOpacity></View>
-                
+        <View style={styles.signupRow}>
+          <Text style={styles.signupText}>Don't have an account?</Text>
+          <TouchableOpacity onPress={() => router.navigate('/signup')}>
+            <Text style={styles.signupLink}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-
-flex:1,
-    alignContent: 'center',
-justifyContent:"center",
-    backgroundColor: '#ffffff',
-    padding: 5,
+    flexGrow: 1,
+    justifyContent: 'center',
+    backgroundColor: '#fff',
+    padding: 15,
   },
   heading: {
-    marginTop: -50,
-    color:colors.text,
-
-    marginLeft: 20,
-    fontSize: 35,
-    lineHeight: 60,
-    textAlign: 'left',
+    fontSize: 30,
+    color: colors.text,
     fontFamily: 'Poppins-SemiBold',
+    marginBottom: 10,
+    marginLeft: 10,
   },
-
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+    gap: 10,
+    marginLeft: 10,
+  },
+  logoText: {
+    fontSize: 26,
+    color: colors.text,
+    fontFamily: 'Poppins-Bold',
+  },
+  image: {
+    width: 60,
+    height: 60,
+  },
   main: {
     width: '90%',
-    height: 'auto',
-    paddingVertical:"20",
-    marginTop: 60,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignContent: 'center',
     alignSelf: 'center',
     backgroundColor: colors.background,
+    borderRadius: 20,
+    paddingVertical: 30,
+    paddingHorizontal: 15,
+    marginTop: 20,
   },
-  image:{
-    width: 70,
-    height: 70,
-    
-  },
-  input: {
-    width: '90%',
-    height: 50,
-    
-    borderRadius: 15,
-    backgroundColor: 'white',
-    fontFamily: 'Poppins-Regular',
-    paddingLeft: 10,
-    flexDirection: 'row',
+  profileIcon: {
+    backgroundColor: colors.white,
+    height: 80,
+    width: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
     alignSelf: 'center',
+    position: 'absolute',
+    top: -40,
   },
-  button:{
-width:'30%',
-height:50,
-borderRadius:22,
-alignSelf:"center",
-margin:25,
-justifyContent:"center",
-alignItems:"center",
-backgroundColor:colors.secondary,
+  inputBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 15,
+    height: 50,
+    paddingHorizontal: 10,
   },
-  logintxt:{
-
-fontFamily:"Poppins-SemiBold",
-color:colors.black,
-
-  },noaccountText:{
-
-fontFamily:"Poppins-Regular",
-color:colors.white,
-
-
+  iconWrap: {
+    backgroundColor: colors.background,
+    borderRadius: 50,
+    height: 30,
+    width: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  signuptext:{
-fontFamily:"Poppins-SemiBold",
-
-color:colors.secondary
-
-  },eyeWrapper: {
-  height: 30,
-  width: 30,
-  marginRight: 10,
-  marginTop: 10,
-  alignItems: 'center',
-  justifyContent: 'center',
-},
-
-iconWrapper: {
-  backgroundColor: colors.background,
-  height: 30,
-  width: 30,
-  marginTop: 10,
-  borderRadius: 50,
-  alignItems: 'center',
-  justifyContent: 'center',
-},
-
+  textInput: {
+    flex: 1,
+    marginLeft: 10,
+    fontFamily: 'Poppins-Regular',
+  },
+  eyeWrap: {
+    paddingHorizontal: 5,
+  },
+  button: {
+    backgroundColor: colors.secondary,
+    height: 50,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 30,
+  },
+  buttonText: {
+    fontFamily: 'Poppins-SemiBold',
+    color: colors.black,
+    fontSize: 16,
+  },
+  signupRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 15,
+    gap: 5,
+  },
+  signupText: {
+    fontFamily: 'Poppins-Regular',
+    color: colors.white,
+  },
+  signupLink: {
+    fontFamily: 'Poppins-SemiBold',
+    color: colors.secondary,
+  },
 });

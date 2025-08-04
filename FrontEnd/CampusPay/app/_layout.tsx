@@ -1,25 +1,29 @@
-// import { Stack } from "expo-router";
-// import Login  from "./src/screens/login";
-// export default function RootLayout() {
-//   return (
-//     <Stack>
-//       <Stack.Screen
-//         name="Login"
-//         options={{
-//           headerShown: false,
-//         }}
-//       />
-//       <Stack.Screen
-//         name="(tabs)"
-//         options={{
-//           headerShown: false,
-//         }}
-//       />
-//     </Stack>
-//   );
-// }
-import { Stack } from 'expo-router';
+// app.jsx or _layout.js
+import { Slot, useRouter } from 'expo-router';
+import { AuthContext, AuthProvider } from '../state/AuthContext';
+import { useContext, useEffect } from 'react';
+
+function AppLayout() {
+  const { token, isLoading } = useContext(AuthContext);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (token) {
+      router.replace('/(tabs)');
+    } else {
+      router.replace('/startup');
+    }
+  }, [token, isLoading]);
+
+  return <Slot />;
+}
 
 export default function RootLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  return (
+    <AuthProvider>
+      <AppLayout />
+    </AuthProvider>
+  );
 }
