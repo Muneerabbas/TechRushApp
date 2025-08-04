@@ -1,175 +1,228 @@
-import React from 'react';
-import {
-  Text,
-  View,
-  FlatList,
-  StyleSheet,
-  Image,
-  Dimensions,
-} from 'react-native';
+import { useEffect } from "react";
+import { SafeAreaView, Text, View, StyleSheet,FlatList } from "react-native";
 import { useFonts } from 'expo-font';
-import colors from '../assets/utils/colors';
-const socialPosts = [
-  {
-    _id: "68905cf28a2b9c05001d4192",
-    content: "Hello can anyone imagine this. Its unimaginable",
-    image: "/uploads/social-post-1754291442597.jpg",
-    author: {
-      _id: "688ba4eee59e01175b65f6f8",
-      name: "Admin",
-      profilePicture: "/uploads/user-1753982190589.png"
-    },
-    createdAt: "2025-08-04T07:10:42.601Z"
-  }
-];
-const clubsData = [
-  {
-    _id: "688ba5cde59e01175b65f6fd",
-    name: "The Innovators Hub",
-    description: "A place for builders, creators, and entrepreneurs.",
-    membershipType: "Free",
-    coverImage: ""
-  },
-  {
-    _id: "688c2e9d1a5c7267ead935df",
-    name: "Premium Gamers Guild",
-    description: "Access to high-end gaming setups and tournaments.",
-    membershipType: "Free",
-    coverImage: ""
-  },
-  {
-    _id: "688c2ead1a5c7267ead935e3",
-    name: "Premium Gamers Build",
-    description: "Access to high-end gaming setups and tournaments.",
-    membershipType: "Subscription",
-    coverImage: "/uploads/club-cover-1754017453003.png"
-  }
-];
-
-const eventData = [
-  {
-    _id: '1',
-    title: 'Coding Meetup',
-    description: 'Casual session to solve problems.',
-    club: { name: 'Premium Gamers' },
-    coverImage: '',
-    ticketPrice: 0,
-    eventType: 'Free',
-  },
-  {
-    _id: '2',
-    title: 'Hackathon',
-    description: 'Build your team & win.',
-    club: { name: 'CodeStorm' },
-    coverImage: '',
-    ticketPrice: 0,
-    eventType: 'Free',
-  },
-  {
-    _id: '3',
-    title: 'Game Dev Talk',
-    description: 'Learn Unity & Godot basics.',
-    club: { name: 'PixelWorks' },
-    coverImage: '',
-    ticketPrice: 40,
-    eventType: 'Paid',
-  },
-];
-
+import colors from "../assets/utils/colors";
 export default function Social() {
+  useEffect(() => {
+    fetch('https://jsonplaceholder.typicode.com/todos/1')
+      .then(response => response.json())
+      .then(json => console.log(json));
+  }, []);
+
+
   const [fontsLoaded] = useFonts({
-    'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
+    // 'Poppins-Bold': require('../assests/fonts/Poppins-Bold.ttf'),
     'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'),
-    'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf'),
+    'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf')
   });
 
-  if (!fontsLoaded) return null;
 
-  const renderCard = ({ item }) => {
-    return (
-      <View style={styles.card}>
-        <Image
-          source={{
-            uri: 'https://via.placeholder.com/160x100.png?text=Event',
-          }}
-          style={styles.image}
-        />
-        <Text style={styles.club}>{item.club.name}</Text>
-        <Text style={styles.title}>{item.title}</Text>
-        <Text style={styles.price}>
-          {item.eventType === 'Paid' ? `₹${item.ticketPrice}` : 'Free'}
-        </Text>
-      </View>
-    );
-  };
+  const jokes = 
+    [
+      {
+          "_id": "688a55e41f73c6b2ca4d1cdc",
+          "sender": {
+              "_id": "688a3b8bb264118cb59bb150",
+              "name": "Sanket"
+          },
+          "receiver": {
+              "_id": "688a55bb1f73c6b2ca4d1cd7",
+              "name": "Magar"
+          },
+          "amount": 50,
+          "description": "Lunch payment",
+          "status": "Completed",
+          "createdAt": "2025-07-30",
+          "__v": 0
+      },
+      {
+          "_id": "688a57df1f73c6b2ca4d1ce0",
+          "sender": {
+              "_id": "688a3b8bb264118cb59bb150",
+              "name": "Sanket"
+          },
+          "receiver": {
+              "_id": "688a55bb1f73c6b2ca4d1cd7",
+              "name": "Magar"
+          },
+          "amount": 30,
+          "description": "Payment for snaks",
+          "status": "Completed",
+          "createdAt": "2025-07-30",
+          "__v": 0
+      },
+      {
+          "_id": "688a62b7c1b2fc7056b878ef",
+          "sender": {
+              "_id": "688a3b8bb264118cb59bb150",
+              "name": "Sanket"
+          },
+          "receiver": {
+              "_id": "688a55bb1f73c6b2ca4d1cd7",
+              "name": "Magar"
+          },
+          "amount": 200,
+          "description": "Vadapav",
+          "status": "Completed",
+          "createdAt": "2025-07-30",
+          "__v": 0
+      },
+      {
+          "_id": "688b676e810302b076ad4fb6",
+          "sender": {
+              "_id": "688a3b8bb264118cb59bb150",
+              "name": "Sanket"
+          },
+          "receiver": {
+              "_id": "688902e367266b71fc853f44",
+              "name": "Jane Doe"
+          },
+          "amount": 200,
+          "description": "Vadapav",
+          "status": "Completed",
+          "createdAt": "2025-07-31",
+          "__v": 0
+      }, {
+        "_id": "688b676e810302b076ad4fb6",
+        "sender": {
+            "_id": "688a3b8bb264118cb59bb150",
+            "name": "Sanket"
+        },
+        "receiver": {
+            "_id": "688902e367266b71fc853f44",
+            "name": "Jane Doe"
+        },
+        "amount": 200,
+        "description": "Vadapav",
+        "status": "Completed",
+        "createdAt": "2025-07-31",
+        "__v": 0
+    }, {
+      "_id": "688b676e810302b076ad4fb6",
+      "sender": {
+          "_id": "688a3b8bb264118cb59bb150",
+          "name": "Sanket"
+      },
+      "receiver": {
+          "_id": "688902e367266b71fc853f44",
+          "name": "Jane Doe"
+      },
+      "amount": 200,
+      "description": "Vadapav",
+      "status": "Completed",
+      "createdAt": "2025-07-31",
+      "__v": 0
+  }, {
+    "_id": "688b676e810302b076ad4fb6",
+    "sender": {
+        "_id": "688a3b8bb264118cb59bb150",
+        "name": "Sanket"
+    },
+    "receiver": {
+        "_id": "688902e367266b71fc853f44",
+        "name": "Jane Doe"
+    },
+    "amount": 200,
+    "description": "Vadapav",
+    "status": "Completed",
+    "createdAt": "2025-07-31",
+    "__v": 0
+}
+
+  ];
+
+  // const renderItem = ({ item }) => (
+  //   <View style={styles.card}>
+  //     <Text style={styles.jokeText}>{item.joke}</Text>
+  //   </View>
+  // );
+
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Campus Socials</Text>
+      <Text style={styles.heading }>
+        Clubs And Events
+      </Text>
 
-      <Text style={styles.heading}>Campus Events</Text>
-      <View style={styles.scrollSection}>
-        <FlatList
-          data={eventData}
-          keyExtractor={(item) => item._id}
-          renderItem={renderCard}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-        />
-      </View>
+<View style={styles.main}>
+
+<FlatList
+        data={jokes}
+        keyExtractor={(item) => item._id}
+        renderItem={({ item }) => (
+          <View style={[styles.card,{flex:1, flexDirection:'row',justifyContent:'space-between' }]}>
+<View style={{alignItems:"left",}}>
+
+<Text style={[styles.jokeText,{    fontFamily:"Poppins-SemiBold", textAlign:"left",
+}]}>PASC Club</Text>
+<Text style={styles.jokeText}>{item.amount}rs to {item.receiver.name}</Text>
+
+
+</View>
+
+            <Text style={[styles.descrptiontxt]}>This Clubs is One of the Best Technical clubs in Pict </Text>
+          </View>
+        )}
+      />
+
+</View>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 60,
-    paddingHorizontal: 16,
-    backgroundColor: '#E5C54F',
     flex: 1,
+    padding: 20,
+    paddingTop: 60,
+    backgroundColor:colors.secondary,
   },
   heading: {
-    fontSize: 22,
-    fontFamily: 'Poppins-SemiBold',
-    marginBottom: 10,
+    fontSize: 24,
+
+    marginBottom: 5,
+    marginLeft:10,
+    fontFamily:'Poppins-SemiBold'
   },
-  scrollSection: {
-    height: 210, 
-  },
-  listContent: {
-    paddingRight: 16,
+  main:{
+
+height:'85%',
+marginTop:10,
+width:"100%",
+backgroundColor:colors.secondary,
+borderRadius:18,
+paddingVertical:15,
   },
   card: {
-    width: 160,
-    height: 200,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    marginRight: 12,
-    padding: 10,
-    elevation: 3,
+    borderRadius: 10,
+    padding: 16,
+    height:200,
+    margin: 10,
+    // iOS shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    // Android elevation
+    elevation: 5,
   },
-  image: {
-    width: '100%',
-    height: 90,
-    borderRadius: 8,
-    marginBottom: 6,
+
+  jokeText: {
+    fontSize: 16,
+    color: colors.black,
+    fontFamily:"Poppins-Regular"
+  }, 
+  
+  descrptiontxt: {
+    fontSize: 14,
+      flexWrap: 'wrap',         
+    width: '40%', 
+    color: '#333',
+    textAlign:'right',
+    margin:10,
+    fontFamily:"Poppins-Regular"
   },
-  club: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Regular',
-    color: '#555',
-  },
-  title: {
-    fontSize: 13,
-    fontFamily: 'Poppins-SemiBold',
-    marginTop: 2,
-    color: '#000',
-  },
-  price: {
-    fontSize: 12,
-    fontFamily: 'Poppins-Bold',
-    color: '#2e7d32',
-    marginTop: 4,
-  },
+
 });

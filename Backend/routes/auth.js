@@ -29,7 +29,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ storage: storage, fileFilter: fileFilter });
 
 router.post('/register', upload.single('profilePicture'), authController.register);
-router.post('/login', upload.none(), authController.login);
+router.post('/login', authController.login);
 
 router.get('/me', auth, authController.getProfile);
 router.put('/profile', auth, upload.single('profilePicture'), authController.updateProfile);

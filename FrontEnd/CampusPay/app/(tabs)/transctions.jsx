@@ -1,95 +1,96 @@
 import { useEffect, useState } from "react";
-import {
-  Text,
-  View,
-  StyleSheet,
-  FlatList,
-  ActivityIndicator,
-  RefreshControl,
-} from "react-native";
+import { SafeAreaView, Text, View, StyleSheet, FlatList } from "react-native";
 import { useFonts } from "expo-font";
 import colors from "../assets/utils/colors";
-import TransactionCard from "../components/TransactionCard";
-import { getTransactionHistory, getUserId } from "../../api/transactionApi";
-
-export default function Transactions() {
-  const [data, setData] = useState([]);
-  const [userID, setUserID] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const [fontsLoaded] = useFonts({
-    "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
-    "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
-    "Poppins-Bold": require("../assets/fonts/Poppins-Bold.ttf"),
-  });
-
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+export default function Transctions() {
   useEffect(() => {
-    fetchData();
+    getData();
   }, []);
 
-  const fetchData = async (isRefresh = false) => {
-    if (!isRefresh) setLoading(true);
-    try {
-      const id = await getUserId();
-      setUserID(id);
-      const res = await getTransactionHistory();
-      setData(res.data);
-    } catch (err) {
-      console.error("❌ Error fetching transactions:", err.message);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const [fontsLoaded] = useFonts({
+    // 'Poppins-Bold': require('../assests/fonts/Poppins-Bold.ttf'),
+    "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
+    "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
+  });
 
-  const formatDateTime = (dateString) => {
+  const [data, SetData] = useState([]);
+  const [userID, setUserID] = useState("");
+
+  async function getData() {
+    const token = await AsyncStorage.getItem("authToken");
+    const userid = await AsyncStorage.getItem("userID");
+    setUserID(userid);
+    const res = await axios.get(
+      `https://eu-practitioners-manor-arrival.trycloudflare.com/api/transactions/history`,
+
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    SetData(res.data);
+  }
+  function formatDateTime(dateString) {
     const date = new Date(dateString);
     const options = {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
       hour12: true,
     };
-    return date.toLocaleString("en-IN", options);
-  };
+    return date.toLocaleString('en-IN', options); // Format: "03 Aug 2025, 10:45 AM"
+  }
+  
 
-  if (!fontsLoaded) return null;
+  // const renderItem = ({ item }) => (
+  //   <View style={styles.card}>
+  //     <Text style={styles.jokeText}>{item.joke}</Text>
+  //   </View>
+  // );
+  // const [credited, setcredited]= useState(false)
+  // {{
+  // setcredited(true)
+
+  // }}
 
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Transaction History</Text>
 
-      {/* Optional: show logged in user ID */}
-      {/* <Text style={styles.userIdText}>User ID: {userID}</Text> */}
-
       <View style={styles.main}>
-        {loading ? (
-          <ActivityIndicator size="large" color="#fff" style={{ marginTop: 20 }} />
-        ) : (
-          <FlatList
-            data={data}
-            keyExtractor={(item) => item._id}
-            renderItem={({ item }) => (
-              <TransactionCard
-                item={item}
-                userID={userID}
-                formatDateTime={formatDateTime}
-              />
-            )}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={() => {
-                  setRefreshing(true);
-                  fetchData(true);
-                }}
-              />
-            }
-          />
-        )}
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => (
+            <View
+              style={[
+                styles.card,
+                userID !== item.receiver._id ?{ backgroundColor: "#FFAFAF" }:{ backgroundColor: "#DFF7E2" },
+              ]}
+            >
+              <View style={{}}>
+                {userID == item.receiver._id ? (
+                  <Text style={[styles.title]}>Credited</Text>
+                ) : (
+                  <Text style={[styles.title]}>Debited</Text>
+                )}
+                <Text style={styles.jokeText}>
+                  {item.amount}rs to {item.receiver.name}
+                </Text>
+              </View>
+
+              <Text style={[styles.timetxt, { textAlign: "right" }]}>
+              {formatDateTime(item.createdAt)}
+              </Text>
+            </View>
+          )}
+        />
       </View>
     </View>
   );
@@ -104,16 +105,10 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 24,
+
     marginBottom: 10,
     marginLeft: 10,
     fontFamily: "Poppins-SemiBold",
-  },
-  userIdText: {
-    fontSize: 12,
-    marginLeft: 10,
-    marginBottom: 5,
-    fontFamily: "Poppins-Regular",
-    color: "#999",
   },
   main: {
     height: "80%",
@@ -122,5 +117,29 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: 18,
     paddingVertical: 15,
+  },
+  card: {
+    backgroundColor: "#fff",
+    padding: 15,
+    width: "90%",
+    height: "auto",
+    borderRadius: 18,
+    marginBottom: 10,
+    alignSelf: "center",
+  },
+  jokeText: {
+    fontSize: 15,
+    color: colors.black,
+    fontFamily: "Poppins-Regular",
+  },
+  title: {
+    fontSize: 16,
+    color: colors.black,
+    fontFamily: "Poppins-SemiBold",
+  },
+  timetxt: {
+    fontSize: 12,
+    color: colors.black,
+    fontFamily: "Poppins-Regular",
   },
 });
