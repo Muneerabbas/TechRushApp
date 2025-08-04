@@ -6,9 +6,7 @@ import {
   StyleSheet,
   Image,
   Dimensions,
-  ScrollView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import colors from '../assets/utils/colors';
 const socialPosts = [
@@ -106,11 +104,10 @@ export default function Social() {
   };
 
   return (
-<ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-<View style={styles.container}>
-      {/* <Text style={styles.heading}>Campus Socials</Text> */}
+    <View style={styles.container}>
+      <Text style={styles.heading}>Campus Socials</Text>
 
-    <View>  <Text style={styles.heading}>Clubs And Events</Text>
+      <Text style={styles.heading}>Campus Events</Text>
       <View style={styles.scrollSection}>
         <FlatList
           data={eventData}
@@ -120,56 +117,17 @@ export default function Social() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
         />
-      </View></View>
-
-         <View>  <Text style={styles.heading}>Campus OLX</Text>
-      <View style={styles.scrollSection}>
-        <FlatList
-          data={eventData}
-          keyExtractor={(item) => item._id}
-          renderItem={renderCard}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-        />
-      </View></View>
-
-      <View>  <Text style={styles.heading}> Canteen</Text>
-      <View style={styles.scrollSection}>
-        <FlatList
-          data={eventData}
-          keyExtractor={(item) => item._id}
-          renderItem={renderCard}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-        />
-      </View></View>
-
-    
-    </View>
-    
-    <View style={{height:315, width:"100%", flex:1, backgroundColor:colors.white, padding:24, }}> 
-      <Text style={{fontFamily:"Poppins-Bold", color:'#363636', fontSize:30}}>" Made With</Text>
-      <Ionicons name="heart" size={70} color="red"  style={{alignSelf:"center",margin:10}}/>
-
-      <Text style={{fontFamily:"Poppins-Bold", color:colors.primary, fontSize:30, textAlign:"right"}}>In PICT "</Text>
-
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     paddingTop: 60,
-    padding: 16,
-   
+    paddingHorizontal: 16,
     backgroundColor: '#E5C54F',
-    borderEndEndRadius:22,
-    borderEndEndRadius:22,
-    borderBottomLeftRadius:22,
-
+    flex: 1,
   },
   heading: {
     fontSize: 22,
