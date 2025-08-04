@@ -1,172 +1,97 @@
-import { useEffect } from "react";
-import { SafeAreaView, Text, View, StyleSheet,FlatList } from "react-native";
-import { useFonts } from 'expo-font';
+import { useEffect, useState } from "react";
+import { SafeAreaView, Text, View, StyleSheet, FlatList } from "react-native";
+import { useFonts } from "expo-font";
 import colors from "../assets/utils/colors";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function Transctions() {
   useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/todos/1')
-      .then(response => response.json())
-      .then(json => console.log(json));
+    getData();
   }, []);
-
 
   const [fontsLoaded] = useFonts({
     // 'Poppins-Bold': require('../assests/fonts/Poppins-Bold.ttf'),
-    'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'),
-    'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf')
+    "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
+    "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
+  const [data, SetData] = useState([]);
+  const [userID, setUserID] = useState("");
 
-  const jokes = 
-    [
-      {
-          "_id": "688a55e41f73c6b2ca4d1cdc",
-          "sender": {
-              "_id": "688a3b8bb264118cb59bb150",
-              "name": "Sanket"
-          },
-          "receiver": {
-              "_id": "688a55bb1f73c6b2ca4d1cd7",
-              "name": "Magar"
-          },
-          "amount": 50,
-          "description": "Lunch payment",
-          "status": "Completed",
-          "createdAt": "2025-07-30",
-          "__v": 0
-      },
-      {
-          "_id": "688a57df1f73c6b2ca4d1ce0",
-          "sender": {
-              "_id": "688a3b8bb264118cb59bb150",
-              "name": "Sanket"
-          },
-          "receiver": {
-              "_id": "688a55bb1f73c6b2ca4d1cd7",
-              "name": "Magar"
-          },
-          "amount": 30,
-          "description": "Payment for snaks",
-          "status": "Completed",
-          "createdAt": "2025-07-30",
-          "__v": 0
-      },
-      {
-          "_id": "688a62b7c1b2fc7056b878ef",
-          "sender": {
-              "_id": "688a3b8bb264118cb59bb150",
-              "name": "Sanket"
-          },
-          "receiver": {
-              "_id": "688a55bb1f73c6b2ca4d1cd7",
-              "name": "Magar"
-          },
-          "amount": 200,
-          "description": "Vadapav",
-          "status": "Completed",
-          "createdAt": "2025-07-30",
-          "__v": 0
-      },
-      {
-          "_id": "688b676e810302b076ad4fb6",
-          "sender": {
-              "_id": "688a3b8bb264118cb59bb150",
-              "name": "Sanket"
-          },
-          "receiver": {
-              "_id": "688902e367266b71fc853f44",
-              "name": "Jane Doe"
-          },
-          "amount": 200,
-          "description": "Vadapav",
-          "status": "Completed",
-          "createdAt": "2025-07-31",
-          "__v": 0
-      }, {
-        "_id": "688b676e810302b076ad4fb6",
-        "sender": {
-            "_id": "688a3b8bb264118cb59bb150",
-            "name": "Sanket"
-        },
-        "receiver": {
-            "_id": "688902e367266b71fc853f44",
-            "name": "Jane Doe"
-        },
-        "amount": 200,
-        "description": "Vadapav",
-        "status": "Completed",
-        "createdAt": "2025-07-31",
-        "__v": 0
-    }, {
-      "_id": "688b676e810302b076ad4fb6",
-      "sender": {
-          "_id": "688a3b8bb264118cb59bb150",
-          "name": "Sanket"
-      },
-      "receiver": {
-          "_id": "688902e367266b71fc853f44",
-          "name": "Jane Doe"
-      },
-      "amount": 200,
-      "description": "Vadapav",
-      "status": "Completed",
-      "createdAt": "2025-07-31",
-      "__v": 0
-  }, {
-    "_id": "688b676e810302b076ad4fb6",
-    "sender": {
-        "_id": "688a3b8bb264118cb59bb150",
-        "name": "Sanket"
-    },
-    "receiver": {
-        "_id": "688902e367266b71fc853f44",
-        "name": "Jane Doe"
-    },
-    "amount": 200,
-    "description": "Vadapav",
-    "status": "Completed",
-    "createdAt": "2025-07-31",
-    "__v": 0
-}
+  async function getData() {
+    const token = await AsyncStorage.getItem("authToken");
+    const userid = await AsyncStorage.getItem("userID");
+    setUserID(userid);
+    const res = await axios.get(
+      `https://eu-practitioners-manor-arrival.trycloudflare.com/api/transactions/history`,
 
-  ];
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    SetData(res.data);
+  }
+  function formatDateTime(dateString) {
+    const date = new Date(dateString);
+    const options = {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    };
+    return date.toLocaleString('en-IN', options); // Format: "03 Aug 2025, 10:45 AM"
+  }
+  
 
   // const renderItem = ({ item }) => (
   //   <View style={styles.card}>
   //     <Text style={styles.jokeText}>{item.joke}</Text>
   //   </View>
   // );
+  // const [credited, setcredited]= useState(false)
+  // {{
+  // setcredited(true)
 
+  // }}
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading }>
-        Transaction History
-      </Text>
+      <Text style={styles.heading}>Transaction History</Text>
 
-<View style={styles.main}>
+      <View style={styles.main}>
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item._id}
+          renderItem={({ item }) => (
+            <View
+              style={[
+                styles.card,
+                userID !== item.receiver._id ?{ backgroundColor: "#FFAFAF" }:{ backgroundColor: "#DFF7E2" },
+              ]}
+            >
+              <View style={{}}>
+                {userID == item.receiver._id ? (
+                  <Text style={[styles.title]}>Credited</Text>
+                ) : (
+                  <Text style={[styles.title]}>Debited</Text>
+                )}
+                <Text style={styles.jokeText}>
+                  {item.amount}rs to {item.receiver.name}
+                </Text>
+              </View>
 
-<FlatList
-        data={jokes}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <View style={styles.card}>
-<View style={{}}>
-
-<Text style={[styles.jokeText,{    fontFamily:"Poppins-SemiBold"
-}]}>Credited</Text>
-<Text style={styles.jokeText}>{item.amount}rs to {item.receiver.name}</Text>
-
-
-</View>
-
-            <Text style={[styles.jokeText,{textAlign:"right"}]}>{item.createdAt}</Text>
-          </View>
-        )}
-      />
-
-</View>
-
+              <Text style={[styles.timetxt, { textAlign: "right" }]}>
+              {formatDateTime(item.createdAt)}
+              </Text>
+            </View>
+          )}
+        />
+      </View>
     </View>
   );
 }
@@ -176,38 +101,45 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     paddingTop: 60,
-    backgroundColor: '#F9FAFF',
+    backgroundColor: "#F9FAFF",
   },
   heading: {
     fontSize: 24,
 
     marginBottom: 10,
-    marginLeft:10,
-    fontFamily:'Poppins-SemiBold'
-    // Don't use `fontFamily` here directly unless you're sure the font is loaded
+    marginLeft: 10,
+    fontFamily: "Poppins-SemiBold",
   },
-  main:{
-
-height:'80%',
-marginTop:10,
-width:"100%",
-backgroundColor:colors.primary,
-borderRadius:18,
-paddingVertical:15,
+  main: {
+    height: "80%",
+    marginTop: 10,
+    width: "100%",
+    backgroundColor: colors.primary,
+    borderRadius: 18,
+    paddingVertical: 15,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 15,
-    width:'90%',
-    height:'auto',
+    width: "90%",
+    height: "auto",
     borderRadius: 18,
     marginBottom: 10,
-  alignSelf:"center",
+    alignSelf: "center",
   },
   jokeText: {
-    fontSize: 16,
-    color: '#333',
-    fontFamily:"Poppins-Regular"
+    fontSize: 15,
+    color: colors.black,
+    fontFamily: "Poppins-Regular",
   },
-
+  title: {
+    fontSize: 16,
+    color: colors.black,
+    fontFamily: "Poppins-SemiBold",
+  },
+  timetxt: {
+    fontSize: 12,
+    color: colors.black,
+    fontFamily: "Poppins-Regular",
+  },
 });

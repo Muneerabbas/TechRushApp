@@ -4,9 +4,60 @@ import { Ionicons } from '@expo/vector-icons';
 import colors from './assets/utils/colors';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
+import { Alert } from 'react-native';
+import axios from 'axios';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-export default function Login({navigation}) {
+export default function Login() {
+
+
+
+  async function handleSubmit() {
+    try {
+      const userdata = new FormData();
+      userdata.append('email', email);
+      userdata.append('password', password);
+  
+      const res = await axios.post(
+        `https://eu-practitioners-manor-arrival.trycloudflare.com/api/auth/login`,
+        userdata,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+  
+      const token = res.data.token;
+    const userID = res.data.user._id; 
+
+      if (token) {
+        await AsyncStorage.setItem('authToken', token);
+        await AsyncStorage.setItem("userID", userID);
+
+        await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
+
+        const storedToken = await AsyncStorage.getItem('authToken');
+        console.log('Token from AsyncStorage:', storedToken);
+  
+        Alert.alert('Success', `Login Successful! Token stored: ${storedToken}`);
+        router.replace('/(tabs)');
+  
+      } else {
+        Alert.alert('Failed', 'Token not found in response');
+        router.replace('./startup');
+      }
+    } catch (error) {
+      console.error('Login error:', error.response?.data || error.message);
+      Alert.alert('Failed', 'Login Failed!');
+
+    }
+  }
+  
+  const [email,setEmail]=useState('')
+
   const [password, setPassword] = useState('');
   const router = useRouter();
   const [secure, setSecure] = useState(true); // hide by default
@@ -66,8 +117,11 @@ fontSize:30}}>Campus Pay!</Text>
           </View>
           <TextInput
             placeholder="Enter Email ID"
+            onChangeText={setEmail}
+
             style={{
               marginHorizontal: 10,
+
               fontFamily: 'Poppins-Regular',
             }}></TextInput>
         </View>
@@ -108,7 +162,8 @@ fontSize:30}}>Campus Pay!</Text>
 
  <TouchableOpacity
               style={styles.button}
-              onPress={() => router.replace('./(tabs)')}
+              // onPress={() => router.replace('./(tabs)'),}
+              onPress={handleSubmit}
             >
              <Text style={styles.logintxt}>Login</Text>
             </TouchableOpacity>

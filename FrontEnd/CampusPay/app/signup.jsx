@@ -5,13 +5,14 @@ import {
     TextInput,
     ScrollView,
     TouchableOpacity,
+    Alert
   } from 'react-native';
   import * as Font from 'expo-font';
   import { Ionicons } from '@expo/vector-icons';
   import colors from './assets/utils/colors';
   import { useRouter } from 'expo-router';
 
-  
+import axios from 'axios'
   import { useState } from 'react';
   
   export default function Signup({ navigation }) {
@@ -25,6 +26,9 @@ import {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [secureConfirm, setSecureConfirm] = useState(true);
     const router = useRouter();
+
+const URL = 'https://holmes-restaurants-able-configuring.trycloudflare.com';
+
 
 const [fontsLoaded] = Font.useFonts({
     'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
@@ -49,6 +53,37 @@ const [fontsLoaded] = Font.useFonts({
       setPasswordValid(passwordRegex.test(e));
     }
   
+    async function handleSubmit(){
+try {
+  const userdata = new FormData();
+  userdata.append('name',name)
+  userdata.append('email',email)
+  userdata.append('password',password)
+  const res=
+  await axios.post(`https://designated-flame-series-douglas.trycloudflare.com/api/auth/register`,userdata, {
+    headers: {
+      'Content-Type': 'multipart/form-data', 
+    },
+  }
+
+
+
+)
+
+if(res){
+  Alert.alert('Sucess', 'Registered Sucessfully!');
+
+}
+else{
+  Alert.alert('Error', 'SignUp Failed')
+}
+
+} catch (error) {
+// Alert.alert('Title', 'This is the alert message');
+}
+
+
+    }
     if (!fontsLoaded) return <AppLoading />;
   
     return (
@@ -156,7 +191,7 @@ const [fontsLoaded] = Font.useFonts({
           )}
   
           {/* Sign Up Button */}
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={handleSubmit}>
             <Text style={styles.logintxt}>SignUp</Text>
           </TouchableOpacity>
   

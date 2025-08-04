@@ -8,7 +8,9 @@ import {
     TouchableOpacity,
   } from "react-native";
   import Alert  from 'react-native';
-  
+  import AsyncStorage from '@react-native-async-storage/async-storage';
+  import { useRouter } from 'expo-router';
+
   // import * as ImagePicker from 'expo-image-picker';
   
   
@@ -18,13 +20,24 @@ import {
   import  { useEffect, useState } from 'react';
   
   export default function index() {
+    const router = useRouter();
+
     const [fontsLoaded] = Font.useFonts({
       // 'Poppins-Bold': require('../assests/fonts/Poppins-Bold.ttf'),
       'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'),
       'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf')
     });
     const [imageUri, setImageUri] = useState(null);
-  
+    async function handleSignOut() {
+      try {
+        await AsyncStorage.removeItem('authToken'); 
+        await AsyncStorage.removeItem('userData'); 
+
+        router.replace('/startup'); 
+      } catch (error) {
+        console.error('Error signing out:', error);
+      }
+    }
     const handleOpenCamera = async () => {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
@@ -190,6 +203,10 @@ import {
             </TouchableOpacity>
           </View>
         </View>
+        <TouchableOpacity onPress={handleSignOut}>
+
+          <Text>SignOut</Text>
+        </TouchableOpacity>
       </View>
     );
   }
