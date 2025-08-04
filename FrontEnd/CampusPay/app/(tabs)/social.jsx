@@ -1,228 +1,172 @@
 import { useEffect } from "react";
-import { SafeAreaView, Text, View, StyleSheet,FlatList } from "react-native";
+import { SafeAreaView, Text, View, StyleSheet,FlatList, ScrollView,Image } from "react-native";
 import { useFonts } from 'expo-font';
 import colors from "../assets/utils/colors";
+
+import { Ionicons } from '@expo/vector-icons';
+
 export default function Social() {
-  useEffect(() => {
-    fetch('https://jsonplaceholder.typicode.com/todos/1')
-      .then(response => response.json())
-      .then(json => console.log(json));
-  }, []);
+
 
 
   const [fontsLoaded] = useFonts({
-    // 'Poppins-Bold': require('../assests/fonts/Poppins-Bold.ttf'),
+    'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
     'Poppins-Regular': require('../assets/fonts/Poppins-Regular.ttf'),
-    'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf')
+    'Poppins-SemiBold': require('../assets/fonts/Poppins-SemiBold.ttf'),
   });
 
-
-  const jokes = 
-    [
-      {
-          "_id": "688a55e41f73c6b2ca4d1cdc",
-          "sender": {
-              "_id": "688a3b8bb264118cb59bb150",
-              "name": "Sanket"
-          },
-          "receiver": {
-              "_id": "688a55bb1f73c6b2ca4d1cd7",
-              "name": "Magar"
-          },
-          "amount": 50,
-          "description": "Lunch payment",
-          "status": "Completed",
-          "createdAt": "2025-07-30",
-          "__v": 0
-      },
-      {
-          "_id": "688a57df1f73c6b2ca4d1ce0",
-          "sender": {
-              "_id": "688a3b8bb264118cb59bb150",
-              "name": "Sanket"
-          },
-          "receiver": {
-              "_id": "688a55bb1f73c6b2ca4d1cd7",
-              "name": "Magar"
-          },
-          "amount": 30,
-          "description": "Payment for snaks",
-          "status": "Completed",
-          "createdAt": "2025-07-30",
-          "__v": 0
-      },
-      {
-          "_id": "688a62b7c1b2fc7056b878ef",
-          "sender": {
-              "_id": "688a3b8bb264118cb59bb150",
-              "name": "Sanket"
-          },
-          "receiver": {
-              "_id": "688a55bb1f73c6b2ca4d1cd7",
-              "name": "Magar"
-          },
-          "amount": 200,
-          "description": "Vadapav",
-          "status": "Completed",
-          "createdAt": "2025-07-30",
-          "__v": 0
-      },
-      {
-          "_id": "688b676e810302b076ad4fb6",
-          "sender": {
-              "_id": "688a3b8bb264118cb59bb150",
-              "name": "Sanket"
-          },
-          "receiver": {
-              "_id": "688902e367266b71fc853f44",
-              "name": "Jane Doe"
-          },
-          "amount": 200,
-          "description": "Vadapav",
-          "status": "Completed",
-          "createdAt": "2025-07-31",
-          "__v": 0
-      }, {
-        "_id": "688b676e810302b076ad4fb6",
-        "sender": {
-            "_id": "688a3b8bb264118cb59bb150",
-            "name": "Sanket"
-        },
-        "receiver": {
-            "_id": "688902e367266b71fc853f44",
-            "name": "Jane Doe"
-        },
-        "amount": 200,
-        "description": "Vadapav",
-        "status": "Completed",
-        "createdAt": "2025-07-31",
-        "__v": 0
-    }, {
-      "_id": "688b676e810302b076ad4fb6",
-      "sender": {
-          "_id": "688a3b8bb264118cb59bb150",
-          "name": "Sanket"
-      },
-      "receiver": {
-          "_id": "688902e367266b71fc853f44",
-          "name": "Jane Doe"
-      },
-      "amount": 200,
-      "description": "Vadapav",
-      "status": "Completed",
-      "createdAt": "2025-07-31",
-      "__v": 0
-  }, {
-    "_id": "688b676e810302b076ad4fb6",
-    "sender": {
-        "_id": "688a3b8bb264118cb59bb150",
-        "name": "Sanket"
+  const eventData = [
+    {
+      _id: '1',
+      title: 'Coding Meetup',
+      description: 'Casual session to solve problems.',
+      club: { name: 'Premium Gamers' },
+      coverImage: '',
+      ticketPrice: 0,
+      eventType: 'Free',
     },
-    "receiver": {
-        "_id": "688902e367266b71fc853f44",
-        "name": "Jane Doe"
+    {
+      _id: '2',
+      title: 'Hackathon',
+      description: 'Build your team & win.',
+      club: { name: 'CodeStorm' },
+      coverImage: '',
+      ticketPrice: 0,
+      eventType: 'Free',
     },
-    "amount": 200,
-    "description": "Vadapav",
-    "status": "Completed",
-    "createdAt": "2025-07-31",
-    "__v": 0
-}
-
+    {
+      _id: '3',
+      title: 'Game Dev Talk',
+      description: 'Learn Unity & Godot basics.',
+      club: { name: 'PixelWorks' },
+      coverImage: '',
+      ticketPrice: 40,
+      eventType: 'Paid',
+    },
   ];
+  
 
-  // const renderItem = ({ item }) => (
-  //   <View style={styles.card}>
-  //     <Text style={styles.jokeText}>{item.joke}</Text>
-  //   </View>
-  // );
+  const renderCard = ({ item }) => {
+    return (
+      <View style={styles.card}>
+        <Image
+          source={{
+            uri: 'https://upload.wikimedia.org/wikipedia/commons/b/b6/Image_created_with_a_mobile_phone.png',
+          }}
+          style={styles.image}
+        />
+        <Text style={styles.club}>{item.club.name}</Text>
+        <Text style={styles.title}>{item.title}</Text>
+        <Text style={styles.price}>
+          {item.eventType === 'Paid' ? `₹${item.ticketPrice}` : 'Free'}
+        </Text>
+      </View>
+    );
+  };
 
 
   return (
+    <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
     <View style={styles.container}>
-      <Text style={styles.heading }>
-        Clubs And Events
-      </Text>
+    
+    <View>  <Text style={styles.heading}>Clubs And Events</Text>
+      <View style={styles.scrollSection}>
+        <FlatList
+          data={eventData}
+          keyExtractor={(item) => item._id}
+          renderItem={renderCard}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      </View>
+      </View> <View>  <Text style={styles.heading}>Campus OLX</Text>
+      <View style={styles.scrollSection}>
+        <FlatList
+          data={eventData}
+          keyExtractor={(item) => item._id}
+          renderItem={renderCard}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      </View>
+      </View> <View>  <Text style={styles.heading}>Canteen</Text>
+      <View style={styles.scrollSection}>
+        <FlatList
+          data={eventData}
+          keyExtractor={(item) => item._id}
+          renderItem={renderCard}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      </View>
+      </View>
 
-<View style={styles.main}>
+    </View>  <View style={{height:315, width:"100%", flex:1, backgroundColor:colors.white, padding:24, }}> 
+      <Text style={{fontFamily:"Poppins-Bold", color:'#363636', fontSize:30}}>" Made With</Text>
+      <Ionicons name="heart" size={70} color="red"  style={{alignSelf:"center",margin:10}}/>
 
-<FlatList
-        data={jokes}
-        keyExtractor={(item) => item._id}
-        renderItem={({ item }) => (
-          <View style={[styles.card,{flex:1, flexDirection:'row',justifyContent:'space-between' }]}>
-<View style={{alignItems:"left",}}>
+      <Text style={{fontFamily:"Poppins-Bold", color:colors.primary, fontSize:30, textAlign:"right"}}>In PICT "</Text>
 
-<Text style={[styles.jokeText,{    fontFamily:"Poppins-SemiBold", textAlign:"left",
-}]}>PASC Club</Text>
-<Text style={styles.jokeText}>{item.amount}rs to {item.receiver.name}</Text>
-
-
-</View>
-
-            <Text style={[styles.descrptiontxt]}>This Clubs is One of the Best Technical clubs in Pict </Text>
-          </View>
-        )}
-      />
-
-</View>
-
-    </View>
+      </View></ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    padding: 20,
     paddingTop: 60,
-    backgroundColor:colors.secondary,
+    paddingHorizontal: 16,
+    padding: 16,
+   
+    backgroundColor: '#E5C54F',
+    flex: 1,
+    borderEndEndRadius:22,
+    borderEndEndRadius:22,
+    borderBottomLeftRadius:22,
+
   },
   heading: {
-    fontSize: 24,
-
-    marginBottom: 5,
-    marginLeft:10,
-    fontFamily:'Poppins-SemiBold'
+    fontSize: 22,
+    fontFamily: 'Poppins-SemiBold',
+    marginBottom: 10,
   },
-  main:{
-
-height:'85%',
-marginTop:10,
-width:"100%",
-backgroundColor:colors.secondary,
-borderRadius:18,
-paddingVertical:15,
+  scrollSection: {
+    height: 210, 
+  },
+  listContent: {
+    paddingRight: 16,
   },
   card: {
+    width: 160,
+    height: 200,
     backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 16,
-    height:200,
-    margin: 10,
-    // iOS shadow
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    // Android elevation
-    elevation: 5,
+    borderRadius: 12,
+    marginRight: 12,
+    padding: 10,
+    elevation: 3,
   },
-
-  jokeText: {
-    fontSize: 16,
-    color: colors.black,
-    fontFamily:"Poppins-Regular"
-  }, 
-  
-  descrptiontxt: {
-    fontSize: 14,
-      flexWrap: 'wrap',         
-    width: '40%', 
-    color: '#333',
-    textAlign:'right',
-    margin:10,
-    fontFamily:"Poppins-Regular"
+  image: {
+    width: '100%',
+    height: 90,
+    borderRadius: 8,
+    marginBottom: 6,
   },
-
+  club: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Regular',
+    color: '#555',
+  },
+  title: {
+    fontSize: 13,
+    fontFamily: 'Poppins-SemiBold',
+    marginTop: 2,
+    color: '#000',
+  },
+  price: {
+    fontSize: 12,
+    fontFamily: 'Poppins-Bold',
+    color: '#2e7d32',
+    marginTop: 4,
+  },
 });

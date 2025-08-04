@@ -25,5 +25,5 @@ export default function Index() {
     );
   }
 
-  return isLoggedIn ? <Redirect href="/(tabs)" /> : <Redirect href="/startup" />;
+  return isLoggedIn ? <Redirect href="/(tabs)" /> : <Redirect href="/(tabs)" />;
 }
