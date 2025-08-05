@@ -33,14 +33,14 @@ export default function Login() {
       const token = res.data.token;
     const userID = res.data.user._id; 
     const name = res.data.user.name; 
-    // const email = res.data.user.email; 
+    const mail = res.data.user.email; 
 
 
       if (token) {
         await AsyncStorage.setItem('authToken', token);
         await AsyncStorage.setItem("userID", userID);
         await AsyncStorage.setItem("name", name);
-        // await AsyncStorage.setItem("email", email);
+        await AsyncStorage.setItem("email", mail);
 
         await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
 

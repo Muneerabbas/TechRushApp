@@ -33,7 +33,7 @@ export default function ProfileScreen() {
       const name = await AsyncStorage.getItem('name');
       const email = await AsyncStorage.getItem('email');
       if (name) setName(name);
-      if (email) setEmail(name);
+      if (email) setEmail(email);
     }
 
     fetchUserData();
