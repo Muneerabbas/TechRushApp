@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { SafeAreaView, Text, View, StyleSheet, FlatList } from "react-native";
+import { SafeAreaView, Text, View, StyleSheet, FlatList,ActivityIndicator } from "react-native";
 import { useFonts } from "expo-font";
 import colors from "../assets/utils/colors";
 import axios from "axios";
@@ -10,7 +10,7 @@ export default function Transctions() {
   useEffect(() => {
     getData();
   }, []);
-
+const [isLoading,setIsLoading]= useState(true)
   const [fontsLoaded] = useFonts({
     "Poppins-Bold": require("../assets/fonts/Poppins-Bold.ttf"),
     "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
@@ -21,6 +21,7 @@ export default function Transctions() {
   const [userID, setUserID] = useState("");
 
   async function getData() {
+    setIsLoading(true);
     const token = await AsyncStorage.getItem("authToken");
     const userid = await AsyncStorage.getItem("userID");
     setUserID(userid);
@@ -33,7 +34,7 @@ export default function Transctions() {
         },
       }
     );
-
+if(res){setIsLoading(false)}
     SetData(res.data);
   }
   function formatDateTime(dateString) {
@@ -69,72 +70,76 @@ export default function Transctions() {
       setRefreshing(false);
     }, await getData());
   };
-  return (
+  return  (
     <View style={styles.container}>
       <Text style={styles.heading}>Transaction History</Text>
 
       <View style={styles.main}>
-        <FlatList
-          showsVerticalScrollIndicator={false}
-          data={data}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              progressBackgroundColor={colors.secondary}
-            />
-          }
-          keyExtractor={(item) => item._id}
-          renderItem={({ item }) => (
-            <View
-              style={[
-                styles.card,
-                userID !== item.receiver._id
-                  ? { backgroundColor: "#FFAFAF" }
-                  : { backgroundColor: "#DFF7E2" },
-              ]}
-            >
-              <View style={{}}>
-                {userID == item.receiver._id ? (
-                  <View style={{ flexDirection: "row" }}>
-                    <Text style={[styles.title, { color: "#228B22" }]}>
-                      Credited{" "}
-                    </Text>{" "}
-                    <Ionicons
-                      name="arrow-down-circle-outline"
-                      size={25}
-                      color={"#228B22"}
-                    />
-                  </View>
-                ) : (
-                  <View style={{ flexDirection: "row", gap: 10 }}>
-                    <Text style={[styles.title, { color: "#CD1C18" }]}>
-                      Debited
-                    </Text>{" "}
-                    <Ionicons
-                      name="arrow-up-circle-outline"
-                      size={25}
-                      color={"#CD1C18"}
-                    />
-                  </View>
-                )}
-                {userID == item.receiver._id ? (
-                  <Text style={styles.textstyle}>
-                    {item.amount}rs By {item.sender.name}
-                  </Text>
-                ) : (
-                  <Text style={styles.textstyle}>
-                    {item.amount}rs To {item.receiver.name}
-                  </Text>
-                )}
-              </View>
+        {isLoading ? (
+          <ActivityIndicator size="large" color={colors.secondary} style={{transform:[{scale:1.5}],}} />
+        ) : (
+          <FlatList
+            showsVerticalScrollIndicator={false}
+            data={data}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                progressBackgroundColor={colors.secondary}
+              />
+            }
+            keyExtractor={(item) => item._id}
+            renderItem={({ item }) => (
+              <View
+                style={[
+                  styles.card,
+                  userID !== item.receiver._id
+                    ? { backgroundColor: "#FFAFAF" }
+                    : { backgroundColor: "#DFF7E2" },
+                ]}
+              >
+                <View>
+                  {userID == item.receiver._id ? (
+                    <View style={{ flexDirection: "row" }}>
+                      <Text style={[styles.title, { color: "#228B22" }]}>
+                        Credited{" "}
+                      </Text>
+                      <Ionicons
+                        name="arrow-down-circle-outline"
+                        size={25}
+                        color={"#228B22"}
+                      />
+                    </View>
+                  ) : (
+                    <View style={{ flexDirection: "row", gap: 10 }}>
+                      <Text style={[styles.title, { color: "#CD1C18" }]}>
+                        Debited
+                      </Text>
+                      <Ionicons
+                        name="arrow-up-circle-outline"
+                        size={25}
+                        color={"#CD1C18"}
+                      />
+                    </View>
+                  )}
+                  {userID == item.receiver._id ? (
+                    <Text style={styles.textstyle}>
+                      {item.amount}rs By {item.sender.name}
+                    </Text>
+                  ) : (
+                    <Text style={styles.textstyle}>
+                      {item.amount}rs To {item.receiver.name}
+                    </Text>
+                  )}
+                </View>
 
-              <Text style={[styles.timetxt, { textAlign: "right" }]}>
-                {formatDateTime(item.createdAt)}
-              </Text>
-            </View>
-          )}
-        />
+                <Text style={[styles.timetxt, { textAlign: "right" }]}>
+                  {formatDateTime(item.createdAt)}
+                </Text>
+              </View>
+            )}
+          />
+        )}
       </View>
     </View>
   );
@@ -160,6 +165,8 @@ const styles = StyleSheet.create({
     width: "100%",
     backgroundColor: colors.primary,
     borderRadius: 18,
+    alignContent:"center",
+    justifyContent:"center",
     paddingVertical: 15,
   },
   card: {

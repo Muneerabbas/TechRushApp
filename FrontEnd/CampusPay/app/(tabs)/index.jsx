@@ -20,7 +20,19 @@ import { useEffect, useState } from "react";
 
 export default function index() {
   const router = useRouter();
+  const [name, setName] = useState("");
 
+
+async  function getusername() {
+  const username = await AsyncStorage.getItem("name");
+  setName(username);
+
+  }
+useEffect(()=>{
+getusername()
+
+
+},[])
   const [fontsLoaded] = Font.useFonts({
     "Poppins-Bold": require("../assets/fonts/Poppins-Bold.ttf"),
     "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
@@ -54,44 +66,94 @@ export default function index() {
     }
   };
 
+  
   return (
     <View style={styles.container}>
-      <View style={{  width:"auto"}} > 
-        <View style={{alignSelf:"flex-end",}}>
-        <Ionicons name="person" size={30} color={colors.text} style={{}}/>
+      <View style={{  width:"auto",backgroundColor:colors.primary, borderBottomEndRadius:30, borderBottomLeftRadius:30,
+      padding:15,
+      paddingTop:50,
+      justifyContent:"space-between",
+      flexDirection:"row",
+      alignItems:"center",
+      alignContent:"center",
+      height:"30%",
+}} >   <View> 
+{name?<Text
+style={{
+  fontSize: 35,
+  color: colors.white,
+  marginLeft: 10,
 
-        </View>
+  fontFamily: "Poppins-Bold",
+}}
+>
+Hello,{"\n"}
+{name}
+</Text>:<Text
+style={{
+  fontSize: 35,
+  color: colors.white,
+  marginLeft: 10,
+
+  fontFamily: "Poppins-Bold",
+}}
+>
+Hello,{"\n"}
+Buddy!
+</Text>}
+
+
 </View>
-      <View style={styles.main}>
 
-        <TouchableOpacity onPress={handleOpenCamera}>
-          {/* <Image
-            source={require("../assets/images/qr-code.png")}
-            style={styles.image}
-          /> */}
-            <Ionicons name="scan-circle-outline" size={150} color="white"  style={{alignSelf:"center"}}/>
-            </TouchableOpacity>
-      </View>
 
-      <Text
-        style={{
-          fontFamily: "Poppins-SemiBold",
-          color: colors.text,
-          fontSize: 25,
-          textAlign: "center",
-          margin: 10,
-        }}
-      >
-        Or
-      </Text>
+<View
+              style={{
+                backgroundColor: colors.secondary,
+                height: 45,
+                width: 45,
+                marginRight:10,
+                marginTop:20,
+                borderRadius: 50,
+                alignItems: "center",
+                alignSelf:"flex-start",
+                justifyContent: "center",
+              }}
+            >
+            <TouchableOpacity onPress={()=>{      router.navigate("/src/screens/profile");
+}}><Ionicons name="person-outline" size={25} color="black" /></TouchableOpacity>
+            </View>
+     
+</View>
+    
 
+    <View style={{backgroundColor:colors.background, borderRadius:25, marginTop:100, alignSelf:"center",   width:'95%',}}>
+    <View>
+      <TouchableOpacity onPress={handleOpenCamera} >
+
+<Ionicons name="scan-circle-outline" size={120} color="white" style={{elevation:4, borderRadius:100,alignSelf: "center",position:"absolute",bottom:-40 ,backgroundColor:colors.secondary, }} />
+</TouchableOpacity>;
+<Text
+          style={{
+            fontSize: 30,
+            color: colors.white,
+            marginTop: 50,
+            marginLeft:20,
+            textAlign:"center",
+            fontFamily: "Poppins-Bold",
+          }}
+        >
+          Pay !
+        </Text>
+  
       <View
         style={{
           flexDirection: "row",
           justifyContent: "space-around",
-          backgroundColor: colors.primary,
+          backgroundColor: colors.background,
           padding: 10,
-          borderRadius: 18,
+          marginTop:10,
+      
+          borderRadius: 35,
         }}
       >
         <View style={[styles.input, { flexDirection: "row" }]}>
@@ -106,10 +168,10 @@ export default function index() {
               justifyContent: "center",
             }}
           >
-            <Ionicons name="cash" size={15} color="white" />
+            <Ionicons name="cash-outline" size={15} color="white" />
           </View>
           <TextInput
-            placeholder="Enter name To Pay"
+            placeholder="Paying Who ?"
             style={{
               marginHorizontal: 10,
               width: "100%",
@@ -118,10 +180,10 @@ export default function index() {
           ></TextInput>
         </View>
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.logintxt}>Pay</Text>
+          <Text style={[styles.logintxt]}>Pay</Text>
         </TouchableOpacity>
       </View>
-
+</View>
       {/* <View>
         <Text
           style={{
@@ -155,31 +217,31 @@ export default function index() {
           </View>
         </View>
       </View> */}
-      <View style={{ marginTop: 50 }}>
+      <View style={{ marginTop: 20, backgroundColor:colors.primary ,  paddingBottom:20, borderRadius:25}}>
         <Text
           style={{
-            fontSize: 25,
-            color: colors.text,
+            fontSize: 20,
+            color: colors.white,
             marginTop: 20,
-            fontFamily: "Poppins-SemiBold",
+            marginLeft:20,
+            fontFamily: "Poppins-Bold",
           }}
-        >
-          Split The Bills
+        >Make The Group!
         </Text>
         <View
           style={{
             flexDirection: "row",
             justifyContent: "space-around",
-            backgroundColor: colors.secondary,
+            backgroundColor: colors.primary,
             padding: 10,
             borderRadius: 20,
-            marginTop: 20,
+            // marginTop: 0,
           }}
         >
           <View style={[styles.input, { flexDirection: "row" }]}>
             <View
               style={{
-                backgroundColor: colors.background,
+                backgroundColor: colors.primary,
                 height: 30,
                 width: 30,
                 marginTop: 10,
@@ -200,14 +262,14 @@ export default function index() {
             ></TextInput>
           </View>{" "}
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: colors.primary }]}
+            style={[styles.button, { backgroundColor: colors.secondary }]}
           >
-            <Text style={[styles.logintxt, { color: colors.white }]}>
+            <Text style={[styles.logintxt, { color: colors.text }]}>
               Split
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </View></View>
       <TouchableOpacity onPress={handleSignOut}>
         <Text>SignOut</Text>
       </TouchableOpacity>
@@ -217,13 +279,13 @@ export default function index() {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 15,
+    // padding: 15,
     verticalAlign: "center",
     flex: 1,
-    paddingTop: 40,
+    // paddingTop: 40,
     alignContent: "center",
     backgroundColor:'#F9FAFB',
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     paddingBottom: 150,
   },
 
@@ -234,7 +296,7 @@ const styles = StyleSheet.create({
     
     justifyContent:"center",
     alignSelf: "center",
-    backgroundColor: colors.primary,
+    // backgroundColor: colors.white,
   },
 
   button: {
@@ -244,14 +306,13 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.secondary,
-  },
+    backgroundColor: colors.secondary   },
   logintxt: {
     fontSize: 15,
     textAlign: "center",
     width: "100%",
     fontFamily: "Poppins-SemiBold",
-    color: colors.black,
+    color: colors.text,
   },
 
   favperson: {

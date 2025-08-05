@@ -15,9 +15,9 @@ export default function _layout() {
 
           headerShown: false,
           tabBarStyle: {
-            
+            elevation:9,
             position: 'absolute',
-            height: 90,
+            height: '8%',
             borderTopLeftRadius: 40,
             borderTopRightRadius: 40,
             backgroundColor: 'white',

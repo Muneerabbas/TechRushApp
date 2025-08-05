@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View } from 'react-native';
 import axios from 'axios';
 
-axios.defaults.baseURL = 'https://vienna-remarkable-think-asylum.trycloudflare.com/api'
+axios.defaults.baseURL = 'https://winter-qualify-leone-camp.trycloudflare.com/api'
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);

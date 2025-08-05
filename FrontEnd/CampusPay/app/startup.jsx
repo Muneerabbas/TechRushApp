@@ -13,8 +13,7 @@ export default function Startup() {
     'Poppins-SemiBold': require('./assets/fonts/Poppins-SemiBold.ttf'),
   });
 
-  if (!fontsLoaded) return null; // or show loader
-
+  if (!fontsLoaded) return null; 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
       <Text style={styles.heading}>Welcome To{'\n'}Campus Pay</Text>
