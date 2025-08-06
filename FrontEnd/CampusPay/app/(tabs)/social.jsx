@@ -124,10 +124,10 @@ export default function Social() {
       </View>
 
     </View>  <View style={{height:315, width:"100%", flex:1, backgroundColor:colors.white, padding:24, }}> 
-      <Text style={{fontFamily:"Poppins-Bold", color:'#363636', fontSize:30}}>" Made With</Text>
+      <Text style={{fontFamily:"Poppins-Bold", color:colors.text, fontSize:30}}>" Made With</Text>
       <Ionicons name="heart" size={70} color="red"  style={{alignSelf:"center",margin:10}}/>
 
-      <Text style={{fontFamily:"Poppins-Bold", color:colors.primary, fontSize:30, textAlign:"right"}}>In PICT "</Text>
+      <Text style={{fontFamily:"Poppins-Bold", color:colors.background, fontSize:30, textAlign:"right"}}>In PICT "</Text>
 
       </View></ScrollView>
   );
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     padding: 16,
    
-    backgroundColor: '#E5C54F',
+    backgroundColor: '#f5f5f5',
     flex: 1,
     borderEndEndRadius:22,
     borderEndEndRadius:22,
@@ -163,7 +163,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginRight: 12,
     padding: 10,
-    elevation: 3,
+    elevation: 5,
   },
   image: {
     width: '100%',

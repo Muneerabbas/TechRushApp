@@ -5,12 +5,14 @@ import {
   Image,
   TextInput,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
   TouchableOpacity,
 } from "react-native";
 import Alert from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-
+import PaymentModal from '../components/PaymentModal'
 // import * as ImagePicker from 'expo-image-picker';
 
 import colors from "../assets/utils/colors";
@@ -20,7 +22,8 @@ import { useEffect, useState } from "react";
 
 export default function index() {
   const router = useRouter();
-  const [name, setName] = useState("");
+  const [name, setName] = useState();
+  const [payModal, setPayModal] = useState(false);
 
 
 async  function getusername() {
@@ -28,6 +31,15 @@ async  function getusername() {
   setName(username);
 
   }
+
+
+function Payment() {
+  
+setPayModal(!payModal);
+
+}
+
+
 useEffect(()=>{
 getusername()
 
@@ -38,7 +50,9 @@ getusername()
     "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
     "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
   });
-  const [imageUri, setImageUri] = useState(null);
+  const [payTo, setPayTo] = useState("");
+const [splitAmount, setSplitAmount] = useState("");
+
   async function handleSignOut() {
     try {
       await AsyncStorage.removeItem("authToken");
@@ -49,25 +63,19 @@ getusername()
       console.error("Error signing out:", error);
     }
   }
-  const handleOpenCamera = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission Denied", "Camera access is required.");
-      return;
-    }
-
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
-    }
-  };
-
+  
   
   return (
+    <KeyboardAvoidingView
+    style={{ flex: 1 }}
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20} // adjust this based on your header height
+  >
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
+      >
     <View style={styles.container}>
       <View style={{  width:"auto",backgroundColor:colors.primary, borderBottomEndRadius:30, borderBottomLeftRadius:30,
       padding:15,
@@ -119,7 +127,7 @@ Buddy!
                 justifyContent: "center",
               }}
             >
-            <TouchableOpacity onPress={()=>{      router.navigate("/src/screens/profile");
+            <TouchableOpacity onPress={()=>{      router.replace("/src/screens/profile");
 }}><Ionicons name="person-outline" size={25} color="black" /></TouchableOpacity>
             </View>
      
@@ -128,9 +136,11 @@ Buddy!
 
     <View style={{backgroundColor:colors.background, borderRadius:25, marginTop:100, alignSelf:"center",   width:'95%',}}>
     <View>
-      <TouchableOpacity onPress={handleOpenCamera} >
+      <TouchableOpacity  >
 
-<Ionicons name="scan-circle-outline" size={120} color="white" style={{elevation:4, borderRadius:100,alignSelf: "center",position:"absolute",bottom:-40 ,backgroundColor:colors.secondary, }} />
+<Ionicons name="scan-circle-outline" size={100
+  
+} color="white" style={{elevation:4, borderRadius:100,alignSelf: "center",position:"absolute",bottom:-40 ,backgroundColor:colors.secondary, }} />
 </TouchableOpacity>;
 <Text
           style={{
@@ -171,52 +181,28 @@ Buddy!
             <Ionicons name="cash-outline" size={15} color="white" />
           </View>
           <TextInput
-            placeholder="Paying Who ?"
-            style={{
-              marginHorizontal: 10,
-              width: "100%",
-              fontFamily: "Poppins-Regular",
-            }}
-          ></TextInput>
+  placeholder="Paying Who ?"
+  value={payTo}
+  onChangeText={setPayTo}
+  style={{
+    marginHorizontal: 10,
+    width: "100%",
+    fontFamily: "Poppins-Regular",
+  }}
+/>
+
         </View>
-        <TouchableOpacity style={styles.button}>
-          <Text style={[styles.logintxt]}>Pay</Text>
-        </TouchableOpacity>
+        <TouchableOpacity
+  style={[styles.button, { opacity: payTo.trim() ? 1 : 0.5 }]}
+  onPress={Payment}
+  disabled={!payTo.trim()}
+>
+  <Text style={styles.logintxt}>Pay</Text>
+</TouchableOpacity>
+
       </View>
 </View>
-      {/* <View>
-        <Text
-          style={{
-            fontSize: 25,
-            color: colors.text,
-            marginTop: 10,
-            fontFamily: "Poppins-SemiBold",
-          }}
-        >
-          Favroites
-        </Text>
-        <View
-          style={{
-            flex: 1,
-            flexDirection: "row",
-            justifyContent: "space-between",
-            padding: 10,
-          }}
-        >
-          <View style={styles.favperson}>
-            <Ionicons name="person" size={35} color="white" />
-          </View>
-          <View style={styles.favperson}>
-            <Ionicons name="person" size={35} color="white" />
-          </View>{" "}
-          <View style={styles.favperson}>
-            <Ionicons name="person" size={35} color="white" />
-          </View>{" "}
-          <View style={styles.favperson}>
-            <Ionicons name="person" size={35} color="white" />
-          </View>
-        </View>
-      </View> */}
+    
       <View style={{ marginTop: 20, backgroundColor:colors.primary ,  paddingBottom:20, borderRadius:25}}>
         <Text
           style={{
@@ -253,29 +239,38 @@ Buddy!
               <Ionicons name="people-outline" size={15} color="white" />
             </View>
             <TextInput
-              placeholder="Enter Amount To Split"
-              style={{
-                marginHorizontal: 10,
-                fontFamily: "Poppins-Regular",
-                width: "100%",
-              }}
-            ></TextInput>
+  placeholder="Enter Amount To Split"
+  value={splitAmount}
+  onChangeText={setSplitAmount}
+  keyboardType="numeric"
+  style={{
+    marginHorizontal: 10,
+    fontFamily: "Poppins-Regular",
+    width: "100%",
+  }}
+/>
+
           </View>{" "}
           <TouchableOpacity
-            style={[styles.button, { backgroundColor: colors.secondary }]}
-          >
-            <Text style={[styles.logintxt, { color: colors.text }]}>
-              Split
-            </Text>
-          </TouchableOpacity>
+  style={[styles.button, { backgroundColor: colors.secondary, opacity: splitAmount.trim() ? 1 : 0.5 }]}
+  disabled={!splitAmount.trim()}
+>
+  <Text style={[styles.logintxt, { color: colors.text }]}>
+    Split
+  </Text>
+</TouchableOpacity>
+
         </View>
       </View></View>
-      <TouchableOpacity onPress={handleSignOut}>
-        <Text>SignOut</Text>
-      </TouchableOpacity>
-    </View>
+      
+{payModal?<PaymentModal data={Payment}/>:null}  
+    </View></ScrollView></KeyboardAvoidingView>
   );
 }
+
+
+
+
 
 const styles = StyleSheet.create({
   container: {

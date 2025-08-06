@@ -12,18 +12,17 @@ import { useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import colors from '../../assets/utils/colors'; 
+import colors from '../../assets/utils/colors';
 
 export default function ProfileScreen() {
+  const [fontsLoaded] = useFonts({
+    'Poppins-Bold': require('../../assets/fonts/Poppins-Bold.ttf'),
+    'Poppins-Regular': require('../../assets/fonts/Poppins-Regular.ttf'),
+    'Poppins-SemiBold': require('../../assets/fonts/Poppins-SemiBold.ttf'),
+  });
 
+  if (!fontsLoaded) return null;
 
-      const [fontsLoaded] = useFonts({
-        'Poppins-Bold': require('../../assets/fonts/Poppins-Bold.ttf'),
-        'Poppins-Regular': require('../../assets/fonts/Poppins-Regular.ttf'),
-        'Poppins-SemiBold': require('../../assets/fonts/Poppins-SemiBold.ttf'),
-      });
-    
-      if (!fontsLoaded) return null;
   const [name, setName] = useState('Name');
   const [email, setEmail] = useState('user@gmail.com');
   const router = useRouter();
@@ -39,46 +38,42 @@ export default function ProfileScreen() {
     fetchUserData();
   }, []);
 
-  const handleEditProfile = () => {
-    console.log('Edit Profile Pressed');
-  };
+
 
   const handleLogout = async () => {
-    await AsyncStorage.clear();
-    await AsyncStorage.removeItem("authToken");
-      await AsyncStorage.removeItem("userData");
+    try {
+      await AsyncStorage.clear(); 
+      await AsyncStorage.removeItem('authToken'); 
+      await AsyncStorage.removeItem('userData'); 
 
-      router.replace("/startup");
-   Alert.alert("Logged Out Sucessfully")
+      router.replace('/startup');
+      Alert.alert('Success', 'Logged Out Successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      Alert.alert('Error', 'Failed to log out. Please try again.');
+    }
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-        <TouchableOpacity 
-        onPress={()=>{router.back()}}
-        style={{alignSelf:"flex-start" , top:-150, padding:20 }}>
-
-
+      <TouchableOpacity
+        onPress={() => router.navigate('/(tabs)')}
+        style={{ alignSelf: 'flex-start', top: -150, padding: 20 }}
+      >
         <Ionicons name="arrow-back-outline" size={30} color="black" />
-
-        </TouchableOpacity 
-        >
+      </TouchableOpacity>
       <View style={styles.profileCard}>
         <Image
-          source={require('../../assets/images/react-logo.png')} // replace with your image
+          source={require('../../assets/images/react-logo.png')} 
           style={styles.profileImage}
         />
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.email}>{email}</Text>
 
-        <TouchableOpacity style={styles.editBtn} onPress={handleEditProfile}>
-          <Ionicons name="create-outline" size={20} color="white" />
-          <Text style={styles.editText}>Edit Profile</Text>
-        </TouchableOpacity>
+       
       </View>
 
       <View style={styles.optionsContainer}>
-     
         <TouchableOpacity style={styles.optionRow} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={22} color="red" />
           <Text style={[styles.optionText, { color: 'red' }]}>Logout</Text>
@@ -94,7 +89,7 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     backgroundColor: '#F5F7FB',
     flexGrow: 1,
-    justifyContent:"center"
+    justifyContent: 'center',
   },
   profileCard: {
     alignItems: 'center',
@@ -112,13 +107,12 @@ const styles = StyleSheet.create({
   },
   name: {
     fontSize: 20,
-fontFamily:"Poppins-SemiBold",
+    fontFamily: 'Poppins-SemiBold',
     marginBottom: 5,
   },
   email: {
     fontSize: 14,
-    fontFamily:"Poppins-SemiBold",
-
+    fontFamily: 'Poppins-SemiBold',
     color: '#666',
     marginBottom: 15,
   },
@@ -132,8 +126,7 @@ fontFamily:"Poppins-SemiBold",
   },
   editText: {
     color: 'white',
-    fontFamily:"Poppins-SemiBold",
-
+    fontFamily: 'Poppins-SemiBold',
     marginLeft: 8,
     fontSize: 14,
     fontWeight: '500',
@@ -152,8 +145,7 @@ fontFamily:"Poppins-SemiBold",
     paddingVertical: 12,
   },
   optionText: {
-    fontFamily:"Poppins-Bold",
-
+    fontFamily: 'Poppins-Bold',
     marginLeft: 10,
     fontSize: 16,
     fontWeight: '500',
