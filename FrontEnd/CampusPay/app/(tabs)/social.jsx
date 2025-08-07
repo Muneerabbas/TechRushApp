@@ -1,13 +1,15 @@
 import { useEffect,useState } from "react";
-import { SafeAreaView, Text, View, StyleSheet,FlatList, ScrollView,Image } from "react-native";
+import { SafeAreaView, Text, View, StyleSheet,FlatList, ScrollView,Image,TouchableOpacity } from "react-native";
 import { useFonts } from 'expo-font';
 import colors from "../assets/utils/colors";
-
+import SocialModal from "../components/SocialModal"
 import { Ionicons } from '@expo/vector-icons';
 import { RefreshControl } from "react-native";
 export default function Social() {
 
-
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  
 
   const [fontsLoaded] = useFonts({
     'Poppins-Bold': require('../assets/fonts/Poppins-Bold.ttf'),
@@ -56,7 +58,12 @@ export default function Social() {
 
   const renderCard = ({ item }) => {
     return (
+      
       <View style={styles.card}>
+          <TouchableOpacity onPress={() => {
+      setSelectedEvent(item);
+      setModalVisible(true);
+    }}>
         <Image
           source={{
             uri: 'https://upload.wikimedia.org/wikipedia/commons/b/b6/Image_created_with_a_mobile_phone.png',
@@ -67,7 +74,12 @@ export default function Social() {
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.price}>
           {item.eventType === 'Paid' ? `₹${item.ticketPrice}` : 'Free'}
-        </Text>
+        </Text></TouchableOpacity>
+        <SocialModal
+  visible={modalVisible}
+  event={selectedEvent}
+  onClose={() => setModalVisible(false)}
+/>
       </View>
     );
   };

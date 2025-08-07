@@ -13,6 +13,7 @@ import { useFonts } from 'expo-font';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../assets/utils/colors';
+import LogoutAlert from '../../components/LogoutAlert';
 
 export default function ProfileScreen() {
   const [fontsLoaded] = useFonts({
@@ -21,37 +22,38 @@ export default function ProfileScreen() {
     'Poppins-SemiBold': require('../../assets/fonts/Poppins-SemiBold.ttf'),
   });
 
-  if (!fontsLoaded) return null;
-
   const [name, setName] = useState('Name');
   const [email, setEmail] = useState('user@gmail.com');
+  const [alertVisible, setAlertVisible] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     async function fetchUserData() {
-      const name = await AsyncStorage.getItem('name');
-      const email = await AsyncStorage.getItem('email');
-      if (name) setName(name);
-      if (email) setEmail(email);
+      const storedName = await AsyncStorage.getItem('name');
+      const storedEmail = await AsyncStorage.getItem('email');
+      if (storedName) setName(storedName);
+      if (storedEmail) setEmail(storedEmail);
     }
 
     fetchUserData();
   }, []);
 
-
-
-  const handleLogout = async () => {
+  const handleConfirm = async () => {
+    setAlertVisible(false);
     try {
-      await AsyncStorage.clear(); 
-      await AsyncStorage.removeItem('authToken'); 
-      await AsyncStorage.removeItem('userData'); 
-
+      await AsyncStorage.clear();
+      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('userData');
       router.replace('/startup');
       Alert.alert('Success', 'Logged Out Successfully');
     } catch (error) {
       console.error('Logout error:', error);
       Alert.alert('Error', 'Failed to log out. Please try again.');
     }
+  };
+
+  const handleCancel = () => {
+    setAlertVisible(false);
   };
 
   return (
@@ -62,23 +64,33 @@ export default function ProfileScreen() {
       >
         <Ionicons name="arrow-back-outline" size={30} color="black" />
       </TouchableOpacity>
+
       <View style={styles.profileCard}>
         <Image
-          source={require('../../assets/images/react-logo.png')} 
+          source={require('../../assets/images/react-logo.png')}
           style={styles.profileImage}
         />
         <Text style={styles.name}>{name}</Text>
         <Text style={styles.email}>{email}</Text>
-
-       
       </View>
 
       <View style={styles.optionsContainer}>
-        <TouchableOpacity style={styles.optionRow} onPress={handleLogout}>
+        <TouchableOpacity
+          style={styles.optionRow}
+          onPress={() => setAlertVisible(true)}
+        >
           <Ionicons name="log-out-outline" size={22} color="red" />
           <Text style={[styles.optionText, { color: 'red' }]}>Logout</Text>
         </TouchableOpacity>
       </View>
+
+      <LogoutAlert
+        visible={alertVisible}
+        title="Confirm Logout"
+        message="Are you sure you want to log out?"
+        onCancel={handleCancel}
+        onConfirm={handleConfirm}
+      />
     </ScrollView>
   );
 }
@@ -115,21 +127,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Poppins-SemiBold',
     color: '#666',
     marginBottom: 15,
-  },
-  editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary || '#4C9EEB',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 10,
-  },
-  editText: {
-    color: 'white',
-    fontFamily: 'Poppins-SemiBold',
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: '500',
   },
   optionsContainer: {
     marginTop: 30,

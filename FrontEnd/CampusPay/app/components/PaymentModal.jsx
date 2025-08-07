@@ -10,7 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import colors from "../assets/utils/colors";
 import { useState } from "react";
 
-export default function PaymentModal({ data }) {
+export default function PaymentModal({ data,Payto }) {
   const [amount, setAmount] = useState("");
 
   const handlePay = () => {
@@ -19,17 +19,16 @@ export default function PaymentModal({ data }) {
       return;
     }
 
-    // Handle actual payment logic here
     console.log("Paying amount:", amount);
-    data(); // Close modal
+    data(); 
   };
 
   return (
     <Modal transparent={true} animationType="fade">
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
-          <Text style={styles.title}>Enter Amount</Text>
-          <Text style={[styles.title,{fontSize:20, color:colors.blac}]}>Paying: Muneer Abass</Text>
+          {/* <Text style={styles.title}>Enter Amount</Text> */}
+          <Text style={[styles.title,{fontSize:20, color:colors.black}]}>Paying: {Payto}</Text>
 
           <View style={styles.inputContainer}>
             <Ionicons name="cash-outline" size={20} color="black" />
@@ -64,12 +63,14 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: "85%",
     padding: 20,
-    backgroundColor: colors.white,
+    backgroundColor: "#E7E7E7",
+    
     borderRadius: 20,
     alignItems: "center",
   },
   title: {
     fontSize: 22,
+    margin:15,
     fontFamily: "Poppins-Bold",
     marginBottom: 20,
     color: colors.text,
