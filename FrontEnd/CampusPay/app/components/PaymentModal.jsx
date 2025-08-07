@@ -8,27 +8,53 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../assets/utils/colors";
-import { useState } from "react";
+import { use, useState } from "react";
+import axios from "axios";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function PaymentModal({ data,Payto }) {
+export default function PaymentModal({ data, Payto, receiverid }) {
   const [amount, setAmount] = useState("");
 
-  const handlePay = () => {
+  const handlePay = async () => {
     if (!amount) {
       alert("Please enter an amount");
       return;
     }
 
-    console.log("Paying amount:", amount);
-    data(); 
+    try {
+      const token = await AsyncStorage.getItem("authToken");
+
+      const payload = {
+        receiverId: receiverid,
+        amount: Number(amount), // convert to number if needed
+      };
+
+      const res = await axios.post(
+        `transactions/send`,
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("Transaction successful:", res.data);
+      data(); // close the modal
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert("Payment failed");
+    }
   };
 
   return (
     <Modal transparent={true} animationType="fade">
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
-          {/* <Text style={styles.title}>Enter Amount</Text> */}
-          <Text style={[styles.title,{fontSize:20, color:colors.black}]}>Paying: {Payto}</Text>
+          <Text style={[styles.title, { fontSize: 20, color: colors.black }]}>
+            Paying: {Payto}
+          </Text>
 
           <View style={styles.inputContainer}>
             <Ionicons name="cash-outline" size={20} color="black" />
@@ -53,6 +79,7 @@ export default function PaymentModal({ data,Payto }) {
     </Modal>
   );
 }
+
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,

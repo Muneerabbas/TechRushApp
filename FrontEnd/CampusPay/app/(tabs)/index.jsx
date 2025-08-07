@@ -28,6 +28,7 @@ export default function index() {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [noUser, setnoUser] = useState(true);
+  const [selectedUserID, setSelectedUserID] = useState("");
 
   async function getusername() {
     const username = await AsyncStorage.getItem("name");
@@ -40,11 +41,11 @@ export default function index() {
       setnoUser(false);
       return;
     }
-  
+
     try {
       setIsLoading(true);
       const token = await AsyncStorage.getItem("authToken");
-  
+
       const res = await axios.get(
         `https://techrush-backend.onrender.com/api/search`,
         {
@@ -56,22 +57,23 @@ export default function index() {
           },
         }
       );
-  
+
       const userList = res.data.users;
-  
+
       setUsers(userList);
-      setnoUser(userList.length === 0); 
-  
+      setnoUser(userList.length === 0);
     } catch (error) {
       console.error("Fetch error:", error);
-      setnoUser(true); 
+      setnoUser(true);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   const Payment = (selectedUser) => {
     setPayTo(selectedUser.name);
+    setSelectedUserID(selectedUser._id);
+    console.log(selectedUser);
     setPayModal(true);
   };
 
@@ -85,16 +87,6 @@ export default function index() {
     "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
-  async function handleSignOut() {
-    try {
-      await AsyncStorage.removeItem("authToken");
-      await AsyncStorage.removeItem("userData");
-      router.replace("/startup");
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  }
-
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
@@ -107,48 +99,77 @@ export default function index() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.container}>
-          <View style={{
-            width: "auto",
-            backgroundColor: colors.primary,
-            borderBottomEndRadius: 30,
-            borderBottomLeftRadius: 30,
-            padding: 15,
-            paddingTop: 50,
-            justifyContent: "space-between",
-            flexDirection: "row",
-            alignItems: "center",
-            alignContent: "center",
-            height: "30%",
-          }}>
+          <View
+            style={{
+              width: "auto",
+              backgroundColor: colors.primary,
+              borderBottomEndRadius: 30,
+              borderBottomLeftRadius: 30,
+              padding: 15,
+              paddingTop: 50,
+              justifyContent: "space-between",
+              flexDirection: "row",
+              alignItems: "center",
+              alignContent: "center",
+              height: "30%",
+            }}
+          >
             <View>
               {name ? (
-                <Text style={{ fontSize: 35, color: colors.white, marginLeft: 10, fontFamily: "Poppins-Bold" }}>
-                  Hello,{"\n"}{name}
+                <Text
+                  style={{
+                    fontSize: 35,
+                    color: colors.white,
+                    marginLeft: 10,
+                    fontFamily: "Poppins-Bold",
+                  }}
+                >
+                  Hello,{"\n"}
+                  {name}
                 </Text>
               ) : (
-                <Text style={{ fontSize: 35, color: colors.white, marginLeft: 10, fontFamily: "Poppins-Bold" }}>
+                <Text
+                  style={{
+                    fontSize: 35,
+                    color: colors.white,
+                    marginLeft: 10,
+                    fontFamily: "Poppins-Bold",
+                  }}
+                >
                   Hello,{"\n"}Buddy!
                 </Text>
               )}
             </View>
-            <View style={{
-              backgroundColor: colors.secondary,
-              height: 45,
-              width: 45,
-              marginRight: 10,
-              marginTop: 20,
-              borderRadius: 50,
-              alignItems: "center",
-              alignSelf: "flex-start",
-              justifyContent: "center",
-            }}>
-              <TouchableOpacity onPress={() => router.replace("/src/screens/profile")}> 
+            <View
+              style={{
+                backgroundColor: colors.secondary,
+                height: 45,
+                width: 45,
+                marginRight: 10,
+                marginTop: 20,
+                borderRadius: 50,
+                alignItems: "center",
+                alignSelf: "flex-start",
+                justifyContent: "center",
+              }}
+            >
+              <TouchableOpacity
+                onPress={() => router.replace("/src/screens/profile")}
+              >
                 <Ionicons name="person-outline" size={25} color="black" />
               </TouchableOpacity>
             </View>
           </View>
 
-          <View style={{ backgroundColor: colors.background, borderRadius: 25, marginTop: 100, alignSelf: "center", width: "95%" }}>
+          <View
+            style={{
+              backgroundColor: colors.background,
+              borderRadius: 25,
+              marginTop: 100,
+              alignSelf: "center",
+              width: "95%",
+            }}
+          >
             <View>
               <TouchableOpacity>
                 <Ionicons
@@ -165,58 +186,142 @@ export default function index() {
                   }}
                 />
               </TouchableOpacity>
-              <Text style={{ fontSize: 30, color: colors.white, marginTop: 50, marginLeft: 20, textAlign: "center", fontFamily: "Poppins-Bold" }}>
+              <Text
+                style={{
+                  fontSize: 30,
+                  color: colors.white,
+                  marginTop: 50,
+                  marginLeft: 20,
+                  textAlign: "center",
+                  fontFamily: "Poppins-Bold",
+                }}
+              >
                 Pay !
               </Text>
 
-              <View style={{ flexDirection: "row", justifyContent: "space-around", backgroundColor: colors.background, padding: 10, marginTop: 10, borderRadius: 35 }}>
-                <View style={[styles.input, { flexDirection: "row" }]}>
-                  <View style={{ backgroundColor: colors.background, height: 30, width: 30, marginTop: 10, borderRadius: 50, alignItems: "center", justifyContent: "center" }}>
-                    <Ionicons name="cash-outline" size={15} color="white" />
-                  </View>
-                  <TextInput
-                    placeholder="Paying Who ?"
-                    value={payTo}
-                    onChangeText={(text) => {
-                      setPayTo(text);
-                      getReceiver(text);
-                    }}
-                    style={{ marginHorizontal: 10, width: "100%", fontFamily: "Poppins-Regular" }}
-                  />
-                </View>
-                <TouchableOpacity
-  style={[
-    styles.button,
-    { opacity: payTo.trim() && users.length > 0 ? 1 : 0.5 },
-  ]}
-  onPress={() => setPayModal(true)}
-  disabled={!payTo.trim() || users.length === 0}
->
-                  <Text style={styles.logintxt}>Pay</Text>
-                </TouchableOpacity>
-              </View>
-<ScrollView>
-              {payTo?users.map((user) => (
-                <TouchableOpacity
-                  key={user._id}
-                  onPress={() => Payment(user)}
-                  style={{ padding: 10, backgroundColor: "#fff", borderBottomWidth: 1, borderColor: "#eee", width: "90%", alignSelf: "center", borderRadius: 10, marginTop: 5 }}
+              <View
+                style={[
+                  styles.input,
+                  {
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    width: "90%",
+                    margin: 20,
+                  },
+                ]}
+              >
+                <View
+                  style={{
+                    backgroundColor: colors.background,
+                    height: 30,
+                    width: 30,
+                    borderRadius: 50,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  <Text style={{ fontFamily: "Poppins-Regular", fontSize: 16 }}>
-                    {user.name} 
-                  </Text>
-                </TouchableOpacity>
-              )):null}
+                  <Ionicons name="cash-outline" size={15} color="white" />
+                </View>
+
+                <TextInput
+                  placeholder="Paying Who ?"
+                  value={payTo}
+                  onChangeText={(text) => {
+                    setPayTo(text);
+                    getReceiver(text);
+                  }}
+                  style={{
+                    marginHorizontal: 10,
+                    flex: 1,
+                    fontFamily: "Poppins-Regular",
+                  }}
+                />
+                <View
+                  style={{
+                    height: 30,
+                    width: 30,
+                    borderRadius: 50,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: 10,
+                  }}
+                >
+                  <Ionicons name="search" size={20} color="black" />
+                </View>
+              </View>
+
+              <ScrollView>
+                {payTo
+                  ? users.map((user) => (
+                      <TouchableOpacity
+                        key={user._id}
+                        onPress={() => Payment(user)}
+                        style={{
+                          padding: 10,
+                          backgroundColor: "#fff",
+                          borderBottomWidth: 1,
+                          borderColor: "#eee",
+                          width: "90%",
+                          alignSelf: "center",
+                          borderRadius: 10,
+                          marginTop: 5,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            fontFamily: "Poppins-Regular",
+                            fontSize: 16,
+                          }}
+                        >
+                          {user.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))
+                  : null}
               </ScrollView>
             </View>
 
-            <View style={{ marginTop: 20, backgroundColor: colors.primary, paddingBottom: 20, borderRadius: 25 }}>
-              <Text style={{ fontSize: 20, color: colors.white, marginTop: 20, marginLeft: 20, fontFamily: "Poppins-Bold" }}>
+            <View
+              style={{
+                marginTop: 20,
+                backgroundColor: colors.primary,
+                paddingBottom: 20,
+                borderRadius: 25,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 20,
+                  color: colors.white,
+                  marginTop: 20,
+                  marginLeft: 20,
+                  fontFamily: "Poppins-Bold",
+                }}
+              >
                 Make The Group!
               </Text>
-              <View style={{ flexDirection: "row", justifyContent: "space-around", backgroundColor: colors.primary, padding: 10, borderRadius: 20 }}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-around",
+                  backgroundColor: colors.primary,
+                  padding: 10,
+                  borderRadius: 20,
+                }}
+              >
                 <View style={[styles.input, { flexDirection: "row" }]}>
-                  <View style={{ backgroundColor: colors.primary, height: 30, width: 30, marginTop: 10, borderRadius: 50, alignItems: "center", justifyContent: "center" }}>
+                  <View
+                    style={{
+                      backgroundColor: colors.primary,
+                      height: 30,
+                      width: 30,
+                      marginTop: 10,
+                      borderRadius: 50,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <Ionicons name="people-outline" size={15} color="white" />
                   </View>
                   <TextInput
@@ -224,20 +329,39 @@ export default function index() {
                     value={splitAmount}
                     onChangeText={setSplitAmount}
                     keyboardType="numeric"
-                    style={{ marginHorizontal: 10, fontFamily: "Poppins-Regular", width: "100%" }}
+                    style={{
+                      marginHorizontal: 10,
+                      fontFamily: "Poppins-Regular",
+                      width: "100%",
+                    }}
                   />
                 </View>
                 <TouchableOpacity
-                  style={[styles.button, { backgroundColor: colors.secondary, opacity: splitAmount.trim() ? 1 : 0.5 }]}
+                  style={[
+                    styles.button,
+                    {
+                      backgroundColor: colors.secondary,
+                      opacity: splitAmount.trim() ? 1 : 0.5,
+                    },
+                  ]}
                   disabled={!splitAmount.trim()}
                 >
-                  <Text style={[styles.logintxt, { color: colors.text }]}>Split</Text>
+                  <Text style={[styles.logintxt, { color: colors.text }]}>
+                    Split
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
 
-          {payModal ? <PaymentModal user={noUser}Payto={payTo} data={() => setPayModal(!payModal)} />:null}
+          {payModal ? (
+            <PaymentModal
+              receiverid={selectedUserID}
+              
+              Payto={payTo}
+              data={() => setPayModal(!payModal)}
+            />
+          ) : null}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
