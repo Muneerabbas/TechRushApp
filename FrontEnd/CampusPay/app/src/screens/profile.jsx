@@ -77,10 +77,27 @@ export default function ProfileScreen() {
       <View style={styles.optionsContainer}>
         <TouchableOpacity
           style={styles.optionRow}
+          onPress={() => Alert.alert("No Settings Section")}
+
+        >
+          <Ionicons name="settings" size={22} color="black" />
+          <Text style={[styles.optionText, { color: 'black' }]}>Setting</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.optionRow}
+          onPress={() => Alert.alert("No Edit Section")}
+        >
+          <Ionicons name="create-outline" size={22} color="black" />
+          <Text style={[styles.optionText, { color: 'black' }]}>Edit Profile</Text>
+        </TouchableOpacity> 
+        
+        <TouchableOpacity
+          style={styles.optionRow}
           onPress={() => setAlertVisible(true)}
+
         >
           <Ionicons name="log-out-outline" size={22} color="red" />
-          <Text style={[styles.optionText, { color: 'red' }]}>Logout</Text>
+          <Text style={[styles.optionText, { color: 'black' }]}>Logout</Text>
         </TouchableOpacity>
       </View>
 

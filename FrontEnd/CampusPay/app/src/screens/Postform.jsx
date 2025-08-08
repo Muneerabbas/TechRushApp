@@ -30,7 +30,7 @@ export default function PostForm() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit =  async () => {
     if (!title || !description || !category || !membershipType) {
       alert("Please fill all required fields");
       return;
@@ -47,6 +47,7 @@ export default function PostForm() {
       price: membershipType === "Paid" ? price : "Free",
       image,
     });
+
     alert("Submitted successfully!");
   };
 
@@ -156,7 +157,6 @@ export default function PostForm() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
     padding: 20,
   },
   heading: {

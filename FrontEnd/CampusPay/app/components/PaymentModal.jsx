@@ -26,7 +26,7 @@ export default function PaymentModal({ data, Payto, receiverid }) {
 
       const payload = {
         receiverId: receiverid,
-        amount: Number(amount), // convert to number if needed
+        amount: Number(amount), 
       };
 
       const res = await axios.post(
@@ -41,7 +41,7 @@ export default function PaymentModal({ data, Payto, receiverid }) {
       );
 
       console.log("Transaction successful:", res.data);
-      data(); // close the modal
+      data(); 
     } catch (error) {
       console.error("Payment error:", error);
       alert("Payment failed");

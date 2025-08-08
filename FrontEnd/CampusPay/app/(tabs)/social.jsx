@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   SafeAreaView,
   Text,
   View,
   StyleSheet,
   FlatList,
-  ScrollView,
   Image,
   TouchableOpacity,
   RefreshControl,
@@ -14,25 +13,42 @@ import {
 import { useFonts } from "expo-font";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import axios from "axios"; // Make sure to import axios
+import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { SectionList } from "react-native";
 
 import colors from "../assets/utils/colors";
 import SocialModal from "../components/SocialModal";
 
-// --- Best Practice: Create an Axios instance with a base URL ---
 const axiosInstance = axios.create({
-  baseURL: "https://techrush-backend.onrender.com/api", // Set the base URL for all API requests
+  baseURL: "https://techrush-backend.onrender.com/api",
 });
+
+const BasicLoader = () => (
+  <View style={styles.loaderContainer}>
+    <ActivityIndicator size="large" color={colors.primary} />
+    <Text style={styles.loaderText}>Loading Content...</Text>
+  </View>
+);
+
+const ErrorState = ({ onRetry }) => (
+  <View style={styles.loaderContainer}>
+    <Ionicons name="cloud-offline-outline" size={60} color="#888" />
+    <Text style={styles.errorText}>Couldn't load content</Text>
+    <Text style={styles.errorSubtext}>Please check your connection and try again.</Text>
+    <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+      <Text style={styles.retryButtonText}>Retry</Text>
+    </TouchableOpacity>
+  </View>
+);
 
 export default function Social() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [role, setRole] = useState("");
-  const [clubs, setClubs] = useState([]);
-  const [socials, setSocials] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [sections, setSections] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
@@ -42,137 +58,148 @@ export default function Social() {
     "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
-  // --- Setup Axios interceptor to add the auth token to every request ---
-  useEffect(() => {
-    const setAuthToken = async () => {
+  const fetchData = useCallback(async () => {
+    setError(null);
+    try {
       const token = await AsyncStorage.getItem("authToken");
       if (token) {
-        axiosInstance.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${token}`;
+        axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       }
-    };
-    setAuthToken();
-  }, []);
-
-  const fetchData = async () => {
-    try {
       const userRole = await AsyncStorage.getItem("role");
 
-      // --- FIX: Use correct API endpoints and Promise.all for parallel fetching ---
-      const [clubsRes, socialsRes, eventsRes] = await Promise.all([
-        axiosInstance.get("/clubs"), // Corrected endpoint
-        axiosInstance.get("/social/community"), // Corrected endpoint for socials
-        axiosInstance.get("/events"), // Corrected endpoint
+      const [clubsRes, eventsRes, socialsRes] = await Promise.all([
+        axiosInstance.get("/clubs"),
+        axiosInstance.get("/events"),
+        axiosInstance.get("/social/community"),
       ]);
 
-      setClubs(clubsRes.data || []);
-      setSocials(socialsRes.data || []);
-      setEvents(eventsRes.data || []);
+      const newSections = [
+        {
+          title: "Clubs",
+          data: clubsRes.data,
+          renderCard: renderClubCard,
+        },
+        {
+          title: "Upcoming Events",
+          data: eventsRes.data,
+          renderCard: renderEventCard,
+        },
+        {
+          title: "Community Activity",
+          data: socialsRes.data,
+          renderCard: renderSocialCard,
+        },
+      ].filter(section => section.data && section.data.length > 0);
+
+      setSections(newSections);
       setRole(userRole);
-    } catch (error) {
-      console.error("Error fetching data:", error.response?.data || error.message);
-      // Optional: Add user-friendly error handling (e.g., a toast message)
+    } catch (err) {
+      setError(err);
+      console.error("Error fetching data:", err.response?.data || err.message);
     } finally {
-      setLoading(false);
-      setRefreshing(false); // Ensure refreshing is turned off
+      setIsLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    setLoading(true);
+    setIsLoading(true);
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchData(); // No need to wrap in an async function here
+    fetchData();
   };
 
-  // --- UI IMPROVEMENT: Helper function for opening the modal ---
   const openModal = (item) => {
     setSelectedItem(item);
     setModalVisible(true);
   };
   
-  // --- UI IMPROVEMENT: A component to show when a list is empty ---
-  const EmptyListComponent = ({ message }) => (
-    <View style={styles.emptyContainer}>
-      <Text style={styles.emptyText}>{message}</Text>
-    </View>
-  );
-
-  // --- REFACTOR: Create separate render functions for each card type for clarity and maintainability ---
-  const renderClubCard = ({ item }) => (
+  const renderClubCard = useCallback(({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => openModal(item)}>
       <Image
-        source={{
-          uri: item.coverImage
-            ? `https://techrush-backend.onrender.com${item.coverImage}`
-            : "https://via.placeholder.com/160x90.png?text=Club",
-        }}
+        source={{ uri: item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : "https://via.placeholder.com/180x100.png?text=Club" }}
         style={styles.image}
       />
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={2}>{item.name}</Text>
-        <Text style={styles.cardDescription} numberOfLines={2}>{item.description}</Text>
         <Text style={styles.cardInfo}>Type: {item.membershipType}</Text>
       </View>
     </TouchableOpacity>
-  );
+  ), []);
 
-  const renderEventCard = ({ item }) => (
+  const renderEventCard = useCallback(({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => openModal(item)}>
       <Image
-        source={{
-          uri: item.coverImage
-            ? `https://techrush-backend.onrender.com${item.coverImage}`
-            : "https://via.placeholder.com/160x90.png?text=Event",
-        }}
+        source={{ uri: item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : "https://via.placeholder.com/180x100.png?text=Event" }}
         style={styles.image}
       />
       <View style={styles.cardContent}>
-        <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.cardSubtitle} numberOfLines={1}>Organized by: {item.club?.name}</Text>
+        <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.cardSubtitle} numberOfLines={1}>{item.club?.name}</Text>
         <Text style={styles.cardPrice}>
           {item.eventType === "Paid" ? `₹${item.ticketPrice}` : "Free"}
         </Text>
       </View>
     </TouchableOpacity>
-  );
+  ), []);
 
-  const renderSocialCard = ({ item }) => (
+  const renderSocialCard = useCallback(({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => openModal(item)}>
       <Image
-        source={{
-          uri: item.image // 'social' posts use 'image' field according to backend
-            ? `https://techrush-backend.onrender.com${item.image}`
-            : "https://via.placeholder.com/160x90.png?text=Post",
-        }}
+        source={{ uri: item.image ? `https://techrush-backend.onrender.com${item.image}` : "https://via.placeholder.com/180x100.png?text=Post" }}
         style={styles.image}
       />
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.author?.name}</Text>
-        <Text style={styles.cardDescription} numberOfLines={3}>{item.content}</Text>
+        <Text style={styles.cardDescription} numberOfLines={2}>{item.content}</Text>
       </View>
     </TouchableOpacity>
-  );
+  ), []);
 
-
-  if (!fontsLoaded || loading) {
+  const renderSection = ({ section }) => {
+    if (!section.data || section.data.length === 0) {
+      return null;
+    }
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={{ marginTop: 10, fontFamily: "Poppins-SemiBold" }}>Loading content...</Text>
-      </View>
+      <FlatList
+        data={section.data}
+        renderItem={section.renderCard}
+        keyExtractor={(item) => item._id}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+      />
     );
+  };
+  
+  if (!fontsLoaded || isLoading) {
+    return <BasicLoader />;
+  }
+  
+  if (error && !refreshing) {
+      return <ErrorState onRetry={fetchData} />;
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.white }}>
-      <ScrollView
+    <SafeAreaView style={styles.safeArea}>
+      <SectionList
+        sections={sections}
+        keyExtractor={(item, index) => item._id + index}
+        renderItem={renderSection}
+        renderSectionHeader={({ section: { title } }) => (
+          <Text style={styles.heading}>{title}</Text>
+        )}
+        ListFooterComponent={
+            <View style={styles.footer}>
+              <Text style={styles.footerText}>Made with ❤️ in Pune</Text>
+            </View>
+        }
+        stickySectionHeadersEnabled={false}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ paddingTop: 20 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -181,191 +208,164 @@ export default function Social() {
             tintColor={colors.primary}
           />
         }
-      >
-        <View style={styles.container}>
-          {/* Clubs Section */}
-          <Text style={styles.heading}>Clubs</Text>
-          <FlatList
-            data={clubs}
-            keyExtractor={(item) => item._id}
-            renderItem={renderClubCard}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={<EmptyListComponent message="No clubs available right now." />}
-          />
+      />
 
-          {/* Events Section */}
-          <Text style={styles.heading}>Upcoming Events</Text>
-          <FlatList
-            data={events}
-            keyExtractor={(item) => item._id}
-            renderItem={renderEventCard}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={<EmptyListComponent message="No events scheduled." />}
-          />
-
-          {/* Socials Section */}
-          <Text style={styles.heading}>Community Activity</Text>
-          <FlatList
-            data={socials}
-            keyExtractor={(item) => item._id}
-            renderItem={renderSocialCard}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
-            ListEmptyComponent={<EmptyListComponent message="No community posts yet." />}
-          />
-        </View>
-
-        {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Made with ❤️ in PICT</Text>
-        </View>
-      </ScrollView>
-
-      {/* FAB for Admin */}
       {role === "Admin" && (
         <TouchableOpacity
           style={styles.fab}
           onPress={() => router.navigate("/src/screens/Postform")}
         >
-          <Ionicons name="add" size={28} color="white" />
+          <Ionicons name="add" size={30} color="white" />
         </TouchableOpacity>
       )}
 
-      {/* Modal rendered once */}
       {selectedItem && (
         <SocialModal
           visible={modalVisible}
-          item={selectedItem} // Use a generic 'item' prop for reusability
+          item={selectedItem}
           onClose={() => {
             setModalVisible(false);
-            setSelectedItem(null); // Clear selection on close
+            setSelectedItem(null);
           }}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
-// --- UI IMPROVEMENT: Updated and cleaned up styles ---
 const styles = StyleSheet.create({
-  container: {
-    paddingTop: 60,
-    paddingHorizontal: 0, // Padding will be on the list content
-    backgroundColor: "#f5f5f5",
-    borderBottomLeftRadius: 25,
-    borderBottomRightRadius: 25,
-    paddingBottom: 20,
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#f0f2f5",
   },
   heading: {
-    fontSize: 24,
+    fontSize: 22,
     fontFamily: "Poppins-Bold",
-    marginBottom: 10,
-    marginLeft: 16, // Add left margin to align with cards
+    marginBottom: 12,
+    marginTop: 20,
+    marginLeft: 16,
+    color: '#1c1e21'
   },
   listContent: {
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingBottom: 10,
   },
   card: {
-    width: 170,
-    height: 240,
+    width: 180,
     backgroundColor: "#fff",
-    borderRadius: 16,
-    marginRight: 12,
-    elevation: 4,
+    borderRadius: 18,
+    marginRight: 16,
+    elevation: 3,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
-    overflow: 'hidden', // Ensures content respects border radius
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
+    overflow: 'hidden',
   },
   image: {
     width: "100%",
-    height: 110,
-    backgroundColor: '#e0e0e0', // Placeholder color
+    height: 100,
+    backgroundColor: '#e0e0e0',
   },
   cardContent: {
-    padding: 10,
-    flex: 1, // Allows content to fill remaining space
+    padding: 12,
+    minHeight: 100,
+    justifyContent: 'space-between',
   },
   cardTitle: {
-    fontSize: 14,
-    fontFamily: "Poppins-Bold",
+    fontSize: 15,
+    fontFamily: "Poppins-SemiBold",
     color: "#333",
   },
-   cardSubtitle: {
-    fontSize: 11,
+  cardSubtitle: {
+    fontSize: 12,
     fontFamily: "Poppins-Regular",
     color: "#666",
     marginTop: 2,
   },
-  cardDescription: {
-    fontSize: 12,
+   cardDescription: {
+    fontSize: 13,
     fontFamily: "Poppins-Regular",
-    marginTop: 4,
     color: "#555",
-    flex: 1, // Take up available space
+    marginTop: 4,
   },
   cardInfo: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "Poppins-SemiBold",
     color: colors.primary,
     marginTop: 8,
   },
   cardPrice: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: "Poppins-Bold",
     color: "#2e7d32",
     marginTop: 8,
   },
   footer: {
-    paddingVertical: 40,
+    paddingVertical: 50,
     width: "100%",
-    backgroundColor: colors.white,
+    height:200,
     justifyContent: "center",
     alignItems: 'center',
   },
   footerText: {
-    fontFamily: "Poppins-SemiBold",
-    color: "#888",
-    fontSize: 16,
+    fontFamily: "Poppins-Regular",
+    color: "#999",
+    fontSize: 14,
   },
   fab: {
     position: "absolute",
-    bottom: 100, // Adjusted position
+    bottom: 100,
     right: 20,
     backgroundColor: colors.primary,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: "center",
     alignItems: "center",
     elevation: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
   },
   loaderContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#f0f2f5",
+    padding: 20,
   },
-  emptyContainer: {
-    width: 250, // Give it a width to be visible in the horizontal list
-    height: 240, // Match card height
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 16,
-    padding: 10,
-  },
-  emptyText: {
+  loaderText: {
+    marginTop: 10, 
     fontFamily: 'Poppins-SemiBold',
+    fontSize: 16,
+    color: '#555'
+  },
+  errorText: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 18,
+    color: '#444',
+    marginTop: 16,
+    textAlign: 'center'
+  },
+  errorSubtext: {
+    fontFamily: 'Poppins-Regular',
     fontSize: 14,
-    color: '#999',
-    textAlign: 'center',
-  }
+    color: '#888',
+    marginTop: 8,
+    textAlign: 'center'
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    borderRadius: 30,
+    marginTop: 24,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 16
+  },
 });
