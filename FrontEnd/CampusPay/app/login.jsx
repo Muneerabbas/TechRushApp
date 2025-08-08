@@ -11,8 +11,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [secure, setSecure] = useState(true); // hide password by default
-  const [isLoading, setIsLoading] = useState(false); // loading state for button
+  const [secure, setSecure] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); 
   const router = useRouter();
   const [fontsLoaded] = Font.useFonts({
     'Poppins-Bold': require('./assets/fonts/Poppins-Bold.ttf'),
@@ -23,7 +23,7 @@ export default function Login() {
   if (!fontsLoaded) return <AppLoading />;
 
   async function handleSubmit() {
-    setIsLoading(true); // start loading
+    setIsLoading(true); 
     try {
       const userdata = new FormData();
       userdata.append('email', email);
@@ -43,6 +43,7 @@ export default function Login() {
       const userID = res.data.user._id;
       const name = res.data.user.name;
       const mail = res.data.user.email;
+      const role = res.data.user.role;
 
       if (token) {
         await AsyncStorage.setItem('authToken', token);
@@ -50,7 +51,8 @@ export default function Login() {
         await AsyncStorage.setItem('name', name);
         await AsyncStorage.setItem('email', mail);
         await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
-
+        await AsyncStorage.setItem('role',role);
+console.log(role);
         const storedToken = await AsyncStorage.getItem('authToken');
         console.log('Token from AsyncStorage:', storedToken);
 
@@ -64,7 +66,7 @@ export default function Login() {
       console.error('Login error:', error.response?.data || error.message);
       Alert.alert('Failed', 'Login Failed!');
     } finally {
-      setIsLoading(false); // stop loading
+      setIsLoading(false);
     }
   }
 
@@ -104,7 +106,6 @@ export default function Login() {
           <Ionicons name="person" size={50} color="#333333" />
         </View>
 
-        {/* Email Input */}
         <View style={[styles.input, { marginTop: 40 }]}>
           <View
             style={{
@@ -129,14 +130,11 @@ export default function Login() {
           />
         </View>
 
-        {/* Password Input */}
         <View style={[{ marginTop: 25 }, styles.input]}>
-          {/* 🔒 Password Icon */}
           <View style={styles.iconWrapper}>
             <Ionicons name="key" size={20} color="white" />
           </View>
 
-          {/* 🔤 Password Input */}
           <TextInput
             placeholder="Enter Your Password"
             value={password}
@@ -149,7 +147,6 @@ export default function Login() {
             }}
           />
 
-          {/* 👁️ Eye Icon */}
           <TouchableOpacity
             onPress={() => setSecure(!secure)}
             style={styles.eyeWrapper}
@@ -162,11 +159,11 @@ export default function Login() {
           </TouchableOpacity>
         </View>
 
-        {/* Login Button with Loader */}
+        
         <TouchableOpacity
-          style={[styles.button, isLoading && { opacity: 0.7 }]} // reduce opacity when loading
+          style={[styles.button, isLoading && { opacity: 0.7 }]} 
           onPress={handleSubmit}
-          disabled={isLoading} // disable button while loading
+          disabled={isLoading} 
         >
           {isLoading ? (
             <ActivityIndicator size="small" color={colors.black} />
