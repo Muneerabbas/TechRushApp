@@ -1,6 +1,15 @@
 // app/(tabs)/transactions.jsx (Transactions Screen)
 import React, { useEffect, useState, useCallback } from "react";
-import { SafeAreaView, Text, View, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl } from "react-native";
+import {
+  SafeAreaView,
+  Text,
+  View,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
+  RefreshControl,
+} from "react-native";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -17,23 +26,23 @@ export default function TransactionsScreen() {
   });
 
   const [transactions, setTransactions] = useState([]);
-  const [user, setUser] = useState({ id: '', name: 'User' });
-  const [status, setStatus] = useState('loading');
+  const [user, setUser] = useState({ id: "", name: "User" });
+  const [status, setStatus] = useState("loading");
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
-    if (!refreshing) setStatus('loading');
+    if (!refreshing) setStatus("loading");
     try {
       const [history, currentUserID, currentUserName] = await Promise.all([
         getTransactionHistory(),
         AsyncStorage.getItem("userID"),
         AsyncStorage.getItem("name"),
       ]);
-      setUser({ id: currentUserID, name: currentUserName || 'User' });
+      setUser({ id: currentUserID, name: currentUserName || "User" });
       setTransactions(history);
-      setStatus(history.length > 0 ? 'success' : 'empty');
+      setStatus(history.length > 0 ? "success" : "empty");
     } catch (error) {
-      setStatus('error');
+      setStatus("error");
     } finally {
       setRefreshing(false);
     }
@@ -49,29 +58,56 @@ export default function TransactionsScreen() {
   };
 
   const renderContent = () => {
-    if (status === 'loading' && !refreshing) {
-      return <ActivityIndicator size="large" color={colors.white} style={{ flex: 1 }} />;
+    if (status === "loading" && !refreshing) {
+      return (
+        <ActivityIndicator
+          size="large"
+          color={colors.white}
+          style={{ flex: 1 }}
+        />
+      );
     }
-    if (status === 'error') {
-      return <View style={styles.centeredMessageContainer}><Text style={styles.messageTitle}>Error loading history</Text></View>;
+    if (status === "error") {
+      return (
+        <View style={styles.centeredMessageContainer}>
+          <Text style={styles.messageTitle}>Error loading history</Text>
+        </View>
+      );
     }
-    if (status === 'empty') {
-      return <View style={styles.centeredMessageContainer}><Text style={styles.messageTitle}>No Transactions Yet</Text></View>;
+    if (status === "empty") {
+      return (
+        <View style={styles.centeredMessageContainer}>
+          <Text style={styles.messageTitle}>No Transactions Yet</Text>
+        </View>
+      );
     }
     return (
       <FlatList
         data={transactions}
-        renderItem={({ item }) => <TransactionCard item={item} currentUserID={user.id} />}
+        renderItem={({ item }) => (
+          <TransactionCard item={item} currentUserID={user.id} />
+        )}
         keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 15, paddingTop: 15 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.white]} tintColor={colors.white} />}
+        contentContainerStyle={{ paddingHorizontal: 15, paddingTop: 15,paddingBottom:100, }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.white]}
+            tintColor={colors.white}
+          />
+        }
       />
     );
   };
 
   if (!fontsLoaded) {
-    return <View style={styles.container}><ActivityIndicator size="large" color={colors.primary} /></View>;
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
   return (
@@ -88,9 +124,34 @@ export default function TransactionsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F4F6F9" },
-  heading: { fontSize: 28, fontFamily: "Poppins-Bold", paddingHorizontal: 20, paddingTop: 40, paddingBottom: 15, color: "#121212" },
-  main: { flex: 1, backgroundColor: colors.primary, marginTop: -30, paddingTop: 35, borderTopLeftRadius: 30, borderTopRightRadius: 30 },
-  listHeader: { fontFamily: 'Poppins-Bold', fontSize: 18, color: colors.white, paddingHorizontal: 25, paddingTop: 15, paddingBottom: 10 },
-  centeredMessageContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  messageTitle: { fontFamily: "Poppins-Bold", fontSize: 18, color: 'white' },
+  heading: {
+    fontSize: 28,
+    fontFamily: "Poppins-Bold",
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 15,
+    color: "#121212",
+  },
+  main: {
+    flex: 1,
+    backgroundColor: colors.primary,
+    marginTop: -30,
+    paddingTop: 35,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+  },
+  listHeader: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 18,
+    color: colors.white,
+    paddingHorizontal: 25,
+    paddingTop: 15,
+    paddingBottom: 10,
+  },
+  centeredMessageContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  messageTitle: { fontFamily: "Poppins-Bold", fontSize: 18, color: "white" },
 });

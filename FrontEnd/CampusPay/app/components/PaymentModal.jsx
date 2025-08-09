@@ -23,7 +23,6 @@ export default function PaymentModal({ data, Payto, receiverid }) {
     if (!amount.trim()) {
       return;
     }
-    // Proceed to PIN verification screen
     setShowPinInput(true);
   };
 
@@ -34,17 +33,14 @@ export default function PaymentModal({ data, Payto, receiverid }) {
     }
 
     try {
-      // Get the stored PIN from AsyncStorage
       const storedPin = await AsyncStorage.getItem("userPin");
 
       if (pin === storedPin) {
-        // PIN matches, proceed with payment
         const token = await AsyncStorage.getItem("authToken");
 
         const payload = {
           receiverId: receiverid,
           amount: Number(amount),
-          // We are no longer sending the PIN to the backend
         };
 
         const res = await axios.post(
@@ -60,11 +56,10 @@ export default function PaymentModal({ data, Payto, receiverid }) {
 
         console.log("Transaction successful:", res.data);
         alert("Payment successful!");
-        data(); // Close the modal
+        data(); 
       } else {
-        // PIN does not match
         alert("Incorrect PIN. Please try again.");
-        setPin(""); // Clear the PIN input
+        setPin(""); 
       }
     } catch (error) {
       console.error("Payment error:", error);
@@ -73,12 +68,10 @@ export default function PaymentModal({ data, Payto, receiverid }) {
   };
 
   const handleCancel = () => {
-    // If on PIN screen, go back to amount screen
     if (showPinInput) {
       setShowPinInput(false);
       setPin("");
     } else {
-      // Otherwise, close the modal
       data();
     }
   };
