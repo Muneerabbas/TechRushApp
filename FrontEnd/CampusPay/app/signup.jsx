@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Image,
   ActivityIndicator,
 } from 'react-native';
 import * as Font from 'expo-font';
@@ -14,7 +15,7 @@ import colors from './assets/utils/colors';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { useState } from 'react';
-
+import * as ImagePicker from 'expo-image-picker';
 export default function Signup({ navigation }) {
   const [name, setName] = useState('');
   const [nameverify, setNameverify] = useState(false);
@@ -58,6 +59,19 @@ export default function Signup({ navigation }) {
       userdata.append('name', name);
       userdata.append('email', email);
       userdata.append('password', password);
+  
+      if (image) {
+        const filename = image.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image`;
+  
+        userdata.append('profilePicture', {
+          uri: image,
+          name: filename,
+          type,
+        });
+      }
+  
       const res = await axios.post(
         `/auth/register`,
         userdata,
@@ -67,7 +81,7 @@ export default function Signup({ navigation }) {
           },
         }
       );
-
+  
       if (res) {
         Alert.alert('Success', 'Registered Successfully!');
         router.navigate('/login');
@@ -79,9 +93,27 @@ export default function Signup({ navigation }) {
       Alert.alert('Error', 'SignUp Failed!');
     } finally {
       setIsLoading(false);
-    }
-  }
+    }}
+  const [image, setImage] = useState(null);
 
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Please grant permission to access your photo library.');
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
   if (!fontsLoaded) return <AppLoading />;
 
   return (
@@ -90,6 +122,7 @@ export default function Signup({ navigation }) {
       <Text style={styles.heading}>Campus Pay!</Text>
 
       <View style={styles.main}>
+      <TouchableOpacity onPress={pickImage} style={{ alignSelf: 'center' }}>
         <View
           style={{
             backgroundColor: colors.white,
@@ -108,9 +141,17 @@ export default function Signup({ navigation }) {
             justifyContent: 'center',
           }}
         >
-          <Ionicons name="person" size={50} color="#333333" />
+          {/* Use the selected image if avilable, otherwise show the default icon */}
+          {image ? (
+            <Image
+              source={{ uri: image }}
+              style={{ width: 80, height: 80, borderRadius: 40 }}
+            />
+          ) : (
+            <Ionicons name="person" size={50} color="#333333" />
+          )}
         </View>
-
+      </TouchableOpacity>
         <View style={[{ marginTop: 40 }, styles.input]}>
           <View style={styles.iconWrapper}>
             <Ionicons name="person" size={20} color="white" />
