@@ -1,12 +1,11 @@
-// app/(tabs)/index.jsx (Home Screen)
 import React, { useEffect, useState } from "react";
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts } from "expo-font";
+import axios from "axios";
 
 import PaymentModal from "../components/PaymentModal";
 import colors from "../assets/utils/colors";
-import { searchUsers } from "./services/apiService";
 import { Header } from "./components/home/Header";
 import { PayUser } from "./components/home/PayUser";
 import { QuickActions } from "./components/home/QuickActions";
@@ -25,6 +24,7 @@ export default function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchedUsers, setSearchedUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     const loadUsername = async () => {
@@ -43,11 +43,28 @@ export default function HomeScreen() {
   }, [searchQuery]);
 
   const handleSearch = async (query) => {
-    try {
-      const users = await searchUsers(query);
-      setSearchedUsers(users);
-    } catch (error) {
+    if (!query.trim()) {
       setSearchedUsers([]);
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const res = await axios.get(
+        `https://techrush-backend.onrender.com/api/search`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: { query },
+        }
+      );
+      setSearchedUsers(res.data.users || []);
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchedUsers([]);
+    } finally {
+      setIsSearching(false);
     }
   };
   
@@ -72,6 +89,7 @@ export default function HomeScreen() {
                 setQuery={setSearchQuery}
                 users={searchedUsers}
                 onSelectUser={handleSelectUser}
+                isSearching={isSearching}
             />
             <QuickActions 
                 splitAmount={splitAmount}

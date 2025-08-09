@@ -77,6 +77,12 @@ export const createEvent = async (formData) => {
         throw error;
     }
 };
+export const searchUsers = async (query) => {
+  if (!query.trim()) return [];
+  await setAuthToken();
+  const response = await axiosInstance.get('/search', { params: { query } });
+  return response.data.users || [];
+};
 
 export const getAllPublicEvents = async () => {
   await setAuthToken();
