@@ -5,77 +5,147 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import colors from "../assets/utils/colors";
-import { use, useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function PaymentModal({ data, Payto, receiverid }) {
   const [amount, setAmount] = useState("");
+  const [pin, setPin] = useState("");
+  const [showPinInput, setShowPinInput] = useState(false);
 
   const handlePay = async () => {
-    if (!amount) {
-      alert("Please enter an amount");
+    if (!amount.trim()) {
+      return;
+    }
+    // Proceed to PIN verification screen
+    setShowPinInput(true);
+  };
+
+  const handlePinVerify = async () => {
+    if (!pin.trim()) {
+      alert("Please enter your PIN.");
       return;
     }
 
     try {
-      const token = await AsyncStorage.getItem("authToken");
+      // Get the stored PIN from AsyncStorage
+      const storedPin = await AsyncStorage.getItem("userPin");
 
-      const payload = {
-        receiverId: receiverid,
-        amount: Number(amount), 
-      };
+      if (pin === storedPin) {
+        // PIN matches, proceed with payment
+        const token = await AsyncStorage.getItem("authToken");
 
-      const res = await axios.post(
-        `transactions/send`,
-        payload,
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        const payload = {
+          receiverId: receiverid,
+          amount: Number(amount),
+          // We are no longer sending the PIN to the backend
+        };
 
-      console.log("Transaction successful:", res.data);
-      data(); 
+        const res = await axios.post(
+          `transactions/send`,
+          payload,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        console.log("Transaction successful:", res.data);
+        alert("Payment successful!");
+        data(); // Close the modal
+      } else {
+        // PIN does not match
+        alert("Incorrect PIN. Please try again.");
+        setPin(""); // Clear the PIN input
+      }
     } catch (error) {
       console.error("Payment error:", error);
-      alert("Payment failed");
+      alert("Payment failed. Please try again.");
+    }
+  };
+
+  const handleCancel = () => {
+    // If on PIN screen, go back to amount screen
+    if (showPinInput) {
+      setShowPinInput(false);
+      setPin("");
+    } else {
+      // Otherwise, close the modal
+      data();
     }
   };
 
   return (
     <Modal transparent={true} animationType="fade">
-      <View style={styles.modalOverlay}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.modalOverlay}
+      >
         <View style={styles.modalContainer}>
-          <Text style={[styles.title, { fontSize: 20, color: colors.black }]}>
-            Paying: {Payto}
+          <Text style={styles.title}>
+            {showPinInput ? "Enter PIN" : `Paying: ${Payto}`}
           </Text>
 
-          <View style={styles.inputContainer}>
-            <Ionicons name="cash-outline" size={20} color="black" />
+          {/* Conditional Rendering of Amount or PIN Input */}
+          {!showPinInput ? (
+            <View style={styles.inputContainer}>
+              <Text style={styles.currencySymbol}>$</Text>
+              <TextInput
+                style={styles.amountInput}
+                placeholder="0.00"
+                keyboardType="numeric"
+                value={amount}
+                onChangeText={(text) => {
+                  const numericValue = text.replace(/[^0-9.]/g, "");
+                  setAmount(numericValue);
+                }}
+                placeholderTextColor="#aaa"
+              />
+            </View>
+          ) : (
             <TextInput
-              style={styles.input}
-              placeholder="Enter amount"
-              keyboardType="numeric"
-              value={amount}
-              onChangeText={setAmount}
+              style={styles.pinInput}
+              placeholder="••••"
+              secureTextEntry={true}
+              keyboardType="number-pad"
+              value={pin}
+              onChangeText={setPin}
+              maxLength={4} // Example: 4-digit PIN
+              placeholderTextColor="#aaa"
             />
-          </View>
+          )}
 
-          <TouchableOpacity style={styles.payButton} onPress={handlePay}>
-            <Text style={styles.payText}>Pay Now</Text>
-          </TouchableOpacity>
+          {/* Conditional Buttons */}
+          {!showPinInput ? (
+            <TouchableOpacity
+              style={[styles.payButton, !amount.trim() && styles.payButtonDisabled]}
+              onPress={handlePay}
+              disabled={!amount.trim()}
+            >
+              <Text style={styles.payText}>Pay Now</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.payButton, !pin.trim() && styles.payButtonDisabled]}
+              onPress={handlePinVerify}
+              disabled={!pin.trim()}
+            >
+              <Text style={styles.payText}>Verify PIN</Text>
+            </TouchableOpacity>
+          )}
 
-          <TouchableOpacity onPress={data}>
-            <Text style={styles.cancelText}>Cancel</Text>
+          <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
+            <Text style={styles.cancelText}>{showPinInput ? "Back" : "Cancel"}</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -83,56 +153,85 @@ export default function PaymentModal({ data, Payto, receiverid }) {
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
   },
   modalContainer: {
     width: "85%",
-    padding: 20,
-    backgroundColor: "#E7E7E7",
-    
+    padding: 25,
+    backgroundColor: colors.white,
     borderRadius: 20,
     alignItems: "center",
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
   title: {
     fontSize: 22,
-    margin:15,
-    fontFamily: "Poppins-Bold",
-    marginBottom: 20,
-    color: colors.text,
+    fontFamily: "Poppins-SemiBold",
+    marginBottom: 25,
+    color: "#333",
+    textAlign: "center",
   },
+  // Amount input styles
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#f5f5f5",
     borderRadius: 12,
-    paddingHorizontal: 10,
+    paddingHorizontal: 15,
+    marginBottom: 25,
     width: "100%",
-    marginBottom: 20,
   },
-  input: {
-    marginLeft: 10,
-    fontFamily: "Poppins-Regular",
-    fontSize: 16,
+  currencySymbol: {
+    fontSize: 24,
+    fontFamily: "Poppins-Bold",
+    color: colors.primary,
+    marginRight: 5,
+  },
+  amountInput: {
     flex: 1,
+    fontSize: 24,
+    fontFamily: "Poppins-Bold",
+    color: colors.primary,
+    paddingVertical: 12,
+  },
+  // PIN input styles
+  pinInput: {
+    fontSize: 24,
+    fontFamily: "Poppins-Bold",
+    textAlign: "center",
+    letterSpacing: 25,
+    width: "70%",
+    backgroundColor: "#f5f5f5",
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginBottom: 25,
   },
   payButton: {
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.primary,
     borderRadius: 15,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    marginBottom: 10,
+    paddingVertical: 15,
+    width: "100%",
+    alignItems: "center",
+  },
+  payButtonDisabled: {
+    backgroundColor: "#a0c4ff",
   },
   payText: {
-    color: colors.text,
+    color: colors.white,
     fontFamily: "Poppins-SemiBold",
     fontSize: 16,
   },
+  cancelButton: {
+    marginTop: 15,
+  },
   cancelText: {
-    color: "red",
+    color: "#777",
     fontFamily: "Poppins-Regular",
     fontSize: 14,
-    marginTop: 5,
   },
 });

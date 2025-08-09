@@ -44,6 +44,10 @@ export default function Login() {
       const name = res.data.user.name;
       const mail = res.data.user.email;
       const role = res.data.user.role;
+      
+      // Assuming the API response might include a PIN, or it's a hardcoded value for now.
+      // In a real app, you would get this from the user during signup or a separate screen.
+      const userPin = '1234'; // A placeholder PIN for demonstration
 
       if (token) {
         await AsyncStorage.setItem('authToken', token);
@@ -51,8 +55,10 @@ export default function Login() {
         await AsyncStorage.setItem('name', name);
         await AsyncStorage.setItem('email', mail);
         await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
-        await AsyncStorage.setItem('role',role);
-console.log(role);
+        await AsyncStorage.setItem('role', role);
+        await AsyncStorage.setItem('userPin', userPin); // <-- New line to store the PIN
+
+        console.log(role);
         const storedToken = await AsyncStorage.getItem('authToken');
         console.log('Token from AsyncStorage:', storedToken);
 
@@ -159,7 +165,6 @@ console.log(role);
           </TouchableOpacity>
         </View>
 
-        
         <TouchableOpacity
           style={[styles.button, isLoading && { opacity: 0.7 }]} 
           onPress={handleSubmit}

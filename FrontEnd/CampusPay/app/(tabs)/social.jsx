@@ -194,7 +194,7 @@ export default function Social() {
         )}
         ListFooterComponent={
             <View style={styles.footer}>
-              <Text style={styles.footerText}>Made with ❤️ in Pune</Text>
+              <Text style={styles.footerText}>Crafted with ❤️ in Pict</Text>
             </View>
         }
         stickySectionHeadersEnabled={false}

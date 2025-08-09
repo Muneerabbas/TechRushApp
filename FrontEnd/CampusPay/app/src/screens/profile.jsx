@@ -58,14 +58,17 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <TouchableOpacity
+     
+<View style={{width:'100%', alignContent:"center", alignItems:"center"}}>
+<TouchableOpacity
         onPress={() => router.navigate('/(tabs)')}
-        style={{ alignSelf: 'flex-start', top: -150, padding: 20 }}
+        style={{ alignSelf: 'flex-start', top: 0, padding: 20 }}
       >
         <Ionicons name="arrow-back-outline" size={30} color="black" />
       </TouchableOpacity>
 
       <View style={styles.profileCard}>
+        
         <Image
           source={require('../../assets/images/react-logo.png')}
           style={styles.profileImage}
@@ -107,7 +110,7 @@ export default function ProfileScreen() {
         message="Are you sure you want to log out?"
         onCancel={handleCancel}
         onConfirm={handleConfirm}
-      />
+      /></View>
     </ScrollView>
   );
 }
@@ -118,7 +121,9 @@ const styles = StyleSheet.create({
     paddingVertical: 40,
     backgroundColor: '#F5F7FB',
     flexGrow: 1,
-    justifyContent: 'center',
+    width: '100%',
+
+    justifyContent: 'flex-start',
   },
   profileCard: {
     alignItems: 'center',
