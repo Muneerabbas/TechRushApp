@@ -87,10 +87,9 @@ export default function PaymentModal({ data, Payto, receiverid }) {
             {showPinInput ? "Enter PIN" : `Paying: ${Payto}`}
           </Text>
 
-          {/* Conditional Rendering of Amount or PIN Input */}
           {!showPinInput ? (
             <View style={styles.inputContainer}>
-              <Text style={styles.currencySymbol}>$</Text>
+              <Text style={styles.currencySymbol}>₹</Text>
               <TextInput
                 style={styles.amountInput}
                 placeholder="0.00"
@@ -111,7 +110,7 @@ export default function PaymentModal({ data, Payto, receiverid }) {
               keyboardType="number-pad"
               value={pin}
               onChangeText={setPin}
-              maxLength={4} // Example: 4-digit PIN
+              maxLength={4} 
               placeholderTextColor="#aaa"
             />
           )}

@@ -4,13 +4,13 @@ import {
   Text,
   View,
   StyleSheet,
-  FlatList, // This is the core component for the horizontal lists
+  FlatList, 
   Image,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
   Alert,
-  ScrollView, // The main scrolling container
+  ScrollView, 
 } from "react-native";
 import { useFonts } from "expo-font";
 import { useRouter } from "expo-router";
@@ -18,7 +18,6 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
-// Assuming these are the same as your components/utils
 import colors from "../assets/utils/colors";
 import SocialModal from "../components/SocialModal";
 
@@ -27,7 +26,6 @@ const api = axios.create({
   baseURL: "https://techrush-backend.onrender.com/api",
 });
 
-// A simple loading screen
 const LoadingScreen = () => (
   <View style={styles.centerScreen}>
     <ActivityIndicator size="large" color={colors.primary} />
@@ -35,7 +33,6 @@ const LoadingScreen = () => (
   </View>
 );
 
-// A simple error screen
 const ErrorScreen = ({ onRetry }) => (
   <View style={styles.centerScreen}>
     <Text style={styles.errorText}>Oops! Something went wrong.</Text>
@@ -138,7 +135,9 @@ export default function Social() {
   const renderSocialPost = ({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => openModal(item)}>
       <Image
-        source={{ uri: item.image ? `https://techrush-backend.onrender.com${item.image}` : "https://via.placeholder.com/180x100.png?text=Post" }}
+        source={{ uri: item.image ? `https://techrush-backend.onrender.com${item.image}` : '../assets/images/club.webp' }
+      
+      }
         style={styles.cardImage}
       />
       <View style={styles.cardBody}>

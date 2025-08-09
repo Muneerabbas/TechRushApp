@@ -1,5 +1,5 @@
-//app/src/screens/Split.jsx
-import React, { useState } from "react";
+// app/src/screens/Split.jsx
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,12 +9,47 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
-
 import { Ionicons } from "@expo/vector-icons";
-import colors from "../../assets/utils/colors"; 
 import { useNavigation } from "@react-navigation/native";
+import colors from "../../assets/utils/colors";
+
+// A function to fetch users from a real API endpoint.
+// You'll need to replace the URL and method with your actual backend details.
+const searchUsersFromAPI = async (query) => {
+  if (!query.trim()) {
+    return [];
+  }
+
+  // Replace this URL with your actual backend API endpoint for searching users.
+  // The 'query' parameter is what you'll pass to your backend.
+  const apiUrl = `https://techrush-backend.onrender.com/api/search/?query=${query}`;
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "GET", // Or "POST" if your API requires it.
+      headers: {
+        // Add any necessary headers, like an Authorization token.
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API call failed with status: ${response.status}`);
+    }
+
+    // The API should return an array of user objects.
+    const users = await response.json();
+    return users;
+
+  } catch (error) {
+    console.error("Failed to fetch users from API:", error);
+    // You might want to throw the error to be handled by the calling function.
+    throw error;
+  }
+};
 
 export default function SplitPaymentScreen() {
   const navigation = useNavigation();
@@ -22,32 +57,45 @@ export default function SplitPaymentScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [userResults, setUserResults] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const allUsers = [
-    { id: "1", name: "Alice" },
-    { id: "2", name: "Bob" },
-    { id: "3", name: "Charlie" },
-    { id: "4", name: "Diana" },
-  ];
+  // Debouncing search requests with useEffect.
+  useEffect(() => {
+    // Set a timer to wait for the user to stop typing.
+    const delayDebounceFn = setTimeout(async () => {
+      if (searchQuery.trim() === "") {
+        setUserResults([]);
+        return;
+      }
 
-  const handleSearch = (query) => {
-    setSearchQuery(query);
-    if (query.trim() === "") {
-      setUserResults([]);
-      return;
-    }
-    const filteredUsers = allUsers.filter(
-      (user) =>
-        user.name.toLowerCase().includes(query.toLowerCase()) &&
-        !selectedUsers.some((selected) => selected.id === user.id)
-    );
-    setUserResults(filteredUsers);
-  };
+      setLoading(true);
+      try {
+        const results = await searchUsersFromAPI(searchQuery);
+        // Filter out users who are already selected before displaying them.
+        const currentlySelectedIds = new Set(selectedUsers.map(user => user.id));
+        const newResults = results.filter(user => !currentlySelectedIds.has(user.id));
+        setUserResults(newResults);
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+        Alert.alert("Error", "Failed to fetch users. Please try again.");
+        setUserResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 300); // Debounce delay of 300ms.
+
+    // Cleanup function to clear the timeout if the user types again.
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, selectedUsers]); // Rerun the effect when the search query or selected users change.
 
   const handleSelectUser = (user) => {
-    setSelectedUsers([...selectedUsers, user]);
-    setUserResults([]); 
-    setSearchQuery(""); 
+    // Check if the user is not already selected to prevent duplicates.
+    const isAlreadySelected = selectedUsers.some(selected => selected.id === user.id);
+    if (!isAlreadySelected) {
+      setSelectedUsers([...selectedUsers, user]);
+    }
+    setUserResults([]); // Clear search results after selection.
+    setSearchQuery(""); // Clear search query after selection.
   };
 
   const handleRemoveUser = (userId) => {
@@ -56,7 +104,10 @@ export default function SplitPaymentScreen() {
 
   const handleSplit = () => {
     if (!amount || selectedUsers.length === 0) {
-      alert("Please enter an amount and select at least one person.");
+      Alert.alert(
+        "Missing Information",
+        "Please enter an amount and select at least one person to split with."
+      );
       return;
     }
     navigation.navigate("ConfirmSplit", { amount, selectedUsers });
@@ -100,23 +151,33 @@ export default function SplitPaymentScreen() {
               style={styles.searchInput}
               placeholder="Find a person to split with"
               value={searchQuery}
-              onChangeText={handleSearch}
+              onChangeText={setSearchQuery}
               placeholderTextColor="#aaa"
             />
           </View>
-          {userResults.length > 0 && (
-            <View style={styles.userResultsContainer}>
-              {userResults.map((user) => (
-                <TouchableOpacity
-                  key={user.id}
-                  style={styles.userResultItem}
-                  onPress={() => handleSelectUser(user)}
-                >
-                  <Text style={styles.userResultText}>{user.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
+
+          {/* User search results or loading indicator */}
+          <View style={styles.userResultsWrapper}>
+            {loading ? (
+              <ActivityIndicator style={styles.loadingIndicator} size="small" color={colors.primary} />
+            ) : userResults.length > 0 ? (
+              <View style={styles.userResultsContainer}>
+                {userResults.map((user) => (
+                  <TouchableOpacity
+                    key={user.id}
+                    style={styles.userResultItem}
+                    onPress={() => handleSelectUser(user)}
+                  >
+                    <Text style={styles.userResultText}>{user.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              searchQuery.length > 0 && (
+                <Text style={styles.noResultsText}>No users found</Text>
+              )
+            )}
+          </View>
         </View>
 
         {/* Selected Users Preview Section */}
@@ -226,8 +287,19 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Regular",
     fontSize: 16,
   },
-  userResultsContainer: {
+  userResultsWrapper: {
     marginTop: 10,
+  },
+  loadingIndicator: {
+    marginTop: 10,
+  },
+  noResultsText: {
+    marginTop: 10,
+    textAlign: "center",
+    color: "#777",
+    fontFamily: "Poppins-Regular",
+  },
+  userResultsContainer: {
     backgroundColor: "#fff",
     borderRadius: 12,
     borderWidth: 1,
