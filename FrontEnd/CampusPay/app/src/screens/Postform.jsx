@@ -1,4 +1,3 @@
-// app/(tabs)/postForm.jsx
 import React, { useState } from "react";
 import {
   View,
@@ -10,284 +9,212 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  SafeAreaView,
+  Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
+import { useRouter } from "expo-router";
 
-const primaryColor = "#007AFF";
-// Define your API's base URL here. The category will be appended to this.
-const API_BASE_URL = "https://techrush-backend.onrender.com/api/";
+import colors from "../../assets/utils/colors";
+import { createClub, createEvent, shareActivity } from "../../(tabs)/services/apiService";
+
+// Reusable Button Component
+const SelectionButton = ({ label, isSelected, onPress }) => (
+  <TouchableOpacity
+    style={[styles.button, isSelected && styles.buttonSelected]}
+    onPress={onPress}
+  >
+    <Text style={[styles.buttonText, isSelected && styles.buttonTextSelected]}>
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
 
 export default function PostForm() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+  const [category, setCategory] = useState(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState(null);
-  const [membershipType, setMembershipType] = useState(null);
-  const [price, setPrice] = useState("");
   const [image, setImage] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [membershipType, setMembershipType] = useState("Free");
+  const [price, setPrice] = useState("");
 
-  // Pick image from gallery
+  const [location, setLocation] = useState("");
+  const [capacity, setCapacity] = useState("");
+
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert("Permission required", "Please allow gallery access.");
-      return;
-    }
-
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 1,
+      allowsEditing: true,
+      aspect: [16, 9],
+      quality: 0.7,
     });
-
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
+      setImage(result.assets[0]);
     }
   };
 
-  // Submit post
   const handleSubmit = async () => {
-    if (!title.trim() || !description.trim() || !category || !membershipType) {
-      Alert.alert("Error", "Please fill in all required fields.");
+    if (!category || !title.trim() || !description.trim()) {
+      Alert.alert("Error", "Please fill in title, description, and category.");
       return;
     }
-  
-    if (membershipType === "Paid") {
-      const numericPrice = parseFloat(price);
-      if (!price.trim() || isNaN(numericPrice) || numericPrice <= 0) {
-        Alert.alert("Error", "Please enter a valid price for paid posts.");
+    if (category === "Events" && !capacity.trim()) {
+        Alert.alert("Error", "Please enter the event capacity.");
         return;
-      }
+    }
+    setIsLoading(true);
+  
+    const formData = new FormData();
+    if (image) {
+      const filename = image.uri.split('/').pop();
+      const type = `image/${filename.split('.').pop()}`;
+      const imageKey = category === 'Social' ? 'image' : 'coverImage';
+      formData.append(imageKey, { uri: image.uri, name: filename, type });
     }
   
-    setLoading(true);
-  
     try {
-      const token = await AsyncStorage.getItem("authToken");
-      if (!token) {
-        Alert.alert("Error", "You are not logged in.");
-        setLoading(false);
-        return;
-      }
-  
-      const formData = new FormData();
-      let imageKey = "coverImage";
-      let endpoint = `${API_BASE_URL}${category.toLowerCase()}`;
-      
-      // Separate logic for each category to match backend controller requirements
-      if (category === "Social") {
-        // Backend Social Controller expects 'content' and 'image'
-        formData.append("content", description);
-        imageKey = "image";
-      } else if (category === "Clubs") {
-        // Backend Club Controller expects 'name', 'description', 'eventType', 'ticketPrice', and 'coverImage'
+      if (category === "Clubs") {
         formData.append("name", title);
         formData.append("description", description);
         formData.append("eventType", membershipType);
-        if (membershipType === "Paid") {
-          formData.append("ticketPrice", parseFloat(price));
-        }
+        if (membershipType === "Paid") formData.append("ticketPrice", price);
+        await createClub(formData);
       } else if (category === "Events") {
-        // Backend Event Controller expects 'title', 'description', 'eventType', 'ticketPrice', and 'coverImage'.
-        // NOTE: The backend `createEvent` controller also expects 'date', 'location', 'capacity', and 'visibility',
-        // which are not currently included in the form. This might cause a server error if they are required fields.
         formData.append("title", title);
         formData.append("description", description);
         formData.append("eventType", membershipType);
-        if (membershipType === "Paid") {
-          formData.append("ticketPrice", parseFloat(price));
-        }
+        if (membershipType === "Paid") formData.append("ticketPrice", price);
+        formData.append("location", location || "Campus");
+        formData.append("visibility", "Public");
+        formData.append("capacity", capacity);
+        await createEvent(formData);
+      } else if (category === "Social") {
+        formData.append("content", description);
+        await shareActivity(formData);
       }
-  
-      // Append the image using the correct key
-      if (image) {
-        formData.append(imageKey, {
-          uri: image,
-          type: "image/jpeg",
-          name: "upload.jpg",
-        });
-      }
-  
-      const response = await axios.post(endpoint, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      Alert.alert("Success", "Post submitted successfully!");
-      setTitle("");
-      setDescription("");
-      setCategory(null);
-      setMembershipType(null);
-      setPrice("");
-      setImage(null);
-  
+      
+      router.back();
+
     } catch (error) {
-      console.error("Error submitting post:", error?.response?.data || error.message);
-      Alert.alert(
-        "Error",
-        error?.response?.data?.message || "Failed to submit post."
-      );
+      // The apiService file already shows an alert.
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-  
-
-  const categories = ["Clubs", "Events", "Social"];
-  const membershipOptions = [
-    { label: "Free", value: "Free" },
-    { label: "Paid", value: "Paid" },
-  ];
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.heading}>Make a New Post!</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 50 }} keyboardShouldPersistTaps="handled">
+        <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()}>
+                <Ionicons name="arrow-back" size={28} color="#333" />
+            </TouchableOpacity>
+            <Text style={styles.heading}>Create New Post</Text>
+        </View>
 
-      <Text style={styles.label}>Title</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter title..."
-        value={title}
-        onChangeText={setTitle}
-      />
+        <Text style={styles.label}>What are you creating?*</Text>
+        <View style={styles.row}>
+          {["Clubs", "Events", "Social"].map(item => (
+            <SelectionButton key={item} label={item} isSelected={category === item} onPress={() => setCategory(item)} />
+          ))}
+        </View>
 
-      <Text style={styles.label}>Description</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="Enter description..."
-        value={description}
-        onChangeText={setDescription}
-        multiline
-      />
+        {category && (
+          <>
+            <Text style={styles.label}>{category === 'Clubs' ? 'Club Name*' : 'Title*'}</Text>
+            <TextInput style={styles.input} placeholder="Enter a catchy title..." value={title} onChangeText={setTitle} />
 
-      <Text style={styles.label}>Category</Text>
-      <View style={styles.row}>
-        {categories.map((item) => (
-          <TouchableOpacity
-            key={item}
-            style={[
-              styles.button,
-              category === item && styles.buttonSelected,
-            ]}
-            onPress={() => setCategory(item)}
-          >
-            <Text
-              style={[
-                styles.buttonText,
-                category === item && styles.buttonTextSelected,
-              ]}
-            >
-              {item}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            <Text style={styles.label}>{category === 'Social' ? 'Content*' : 'Description*'}</Text>
+            <TextInput style={[styles.input, styles.textArea]} placeholder="Describe your post..." value={description} onChangeText={setDescription} multiline />
 
-      <Text style={styles.label}>Membership Type</Text>
-      <View style={styles.row}>
-        {membershipOptions.map((opt) => (
-          <TouchableOpacity
-            key={opt.value}
-            style={[
-              styles.button,
-              membershipType === opt.value && styles.buttonSelected,
-            ]}
-            onPress={() => setMembershipType(opt.value)}
-          >
-            <Text
-              style={[
-                styles.buttonText,
-                membershipType === opt.value && styles.buttonTextSelected,
-              ]}
-            >
-              {opt.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+            {category !== 'Social' && (
+              <>
+                <Text style={styles.label}>Type*</Text>
+                <View style={styles.row}>
+                  {["Free", "Paid"].map(item => (
+                    <SelectionButton key={item} label={item} isSelected={membershipType === item} onPress={() => setMembershipType(item)} />
+                  ))}
+                </View>
 
-      {membershipType === "Paid" && (
-        <>
-          <Text style={styles.label}>Price (₹)</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter price..."
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="numeric"
-          />
-        </>
-      )}
+                {membershipType === "Paid" && (
+                  <>
+                    <Text style={styles.label}>Price (₹)</Text>
+                    <TextInput style={styles.input} placeholder="e.g., 100" value={price} onChangeText={setPrice} keyboardType="numeric" />
+                  </>
+                )}
+              </>
+            )}
 
-      <Text style={styles.label}>Image</Text>
-      <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-        {image ? (
-          <Image source={{ uri: image }} style={styles.imagePreview} />
-        ) : (
-          <Ionicons name="camera-outline" size={36} color="gray" />
+            {category === 'Events' && (
+              <>
+                <Text style={styles.label}>Location*</Text>
+                <TextInput style={styles.input} placeholder="e.g., College Auditorium" value={location} onChangeText={setLocation} />
+                
+                <Text style={styles.label}>Capacity*</Text>
+                <TextInput style={styles.input} placeholder="e.g., 100" value={capacity} onChangeText={setCapacity} keyboardType="numeric" />
+              </>
+            )}
+
+            <Text style={styles.label}>Cover Image</Text>
+            <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+              {image ? (
+                <Image source={{ uri: image.uri }} style={styles.imagePreview} />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Ionicons name="camera-outline" size={36} color="#888" />
+                  <Text style={styles.imagePlaceholderText}>Upload</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit} disabled={isLoading}>
+              {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitButtonText}>Post It!</Text>}
+            </TouchableOpacity>
+          </>
         )}
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        style={styles.submitButton}
-        onPress={handleSubmit}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.submitButtonText}>Post It!</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#f5f5f5" },
-  heading: { fontSize: 22, fontWeight: "bold", marginBottom: 20 },
-  label: { fontSize: 16, fontWeight: "bold", marginTop: 15, marginBottom: 5 },
+  safeArea: { flex: 1, backgroundColor: "#f8f9fa" },
+  container: { flex: 1, padding: 20 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
+  heading: { fontSize: 24, fontFamily: "Poppins-Bold", color: '#333', marginLeft: 15 },
+  label: { fontSize: 16, fontFamily: "Poppins-SemiBold", color: '#555', marginTop: 20, marginBottom: 8 },
   input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 10,
-    backgroundColor: "#fff",
+    borderWidth: 1, borderColor: "#ddd", backgroundColor: "#fff",
+    borderRadius: 12, padding: 12, fontSize: 15, fontFamily: "Poppins-Regular",
   },
-  textArea: { height: 100, textAlignVertical: "top" },
+  textArea: { height: 120, textAlignVertical: "top" },
   row: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   button: {
-    borderWidth: 1,
-    borderColor: primaryColor,
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    backgroundColor: "#fff",
+    borderWidth: 1, borderColor: colors.primary, borderRadius: 20,
+    paddingVertical: 8, paddingHorizontal: 16, backgroundColor: "#fff",
   },
-  buttonSelected: { backgroundColor: primaryColor },
-  buttonText: { color: primaryColor },
+  buttonSelected: { backgroundColor: colors.primary },
+  buttonText: { color: colors.primary, fontFamily: 'Poppins-SemiBold' },
   buttonTextSelected: { color: "#fff" },
   imagePicker: {
-    width: 120,
-    height: 120,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#e0e0e0",
+    width: '100%', height: 180, borderWidth: 2, borderColor: "#ddd",
+    borderStyle: 'dashed', borderRadius: 12, justifyContent: "center",
+    alignItems: "center", marginTop: 8, backgroundColor: "#fff", overflow: 'hidden',
   },
-  imagePreview: { width: "100%", height: "100%", borderRadius: 10 },
+  imagePlaceholder: { alignItems: 'center' },
+  imagePlaceholderText: { fontFamily: 'Poppins-SemiBold', color: '#888', marginTop: 8 },
+  imagePreview: { width: "100%", height: "100%" },
+  datePickerButton: {
+    backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd',
+    borderRadius: 12, padding: 12,
+  },
+  datePickerText: { fontFamily: 'Poppins-Regular', fontSize: 15, color: '#333' },
   submitButton: {
-    backgroundColor: primaryColor,
-    paddingVertical: 15,
-    borderRadius: 8,
-    marginTop: 30,
-    alignItems: "center",
+    backgroundColor: colors.primary, paddingVertical: 15, borderRadius: 12,
+    marginTop: 40, alignItems: "center",
   },
-  submitButtonText: { color: "#fff", fontSize: 18, fontWeight: "bold" },
+  submitButtonText: { color: "#fff", fontSize: 18, fontFamily: "Poppins-Bold" },
 });

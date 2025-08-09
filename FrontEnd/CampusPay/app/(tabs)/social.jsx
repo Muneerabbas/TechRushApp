@@ -4,37 +4,45 @@ import {
   Text,
   View,
   StyleSheet,
-  FlatList, 
+  FlatList,
   Image,
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
   Alert,
-  ScrollView, 
+  ScrollView,
 } from "react-native";
 import { useFonts } from "expo-font";
 import { useRouter } from "expo-router";
-import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
 import colors from "../assets/utils/colors";
 import SocialModal from "../components/SocialModal";
+import { getSocialFeed } from "./services/apiService";
 
-// Simplified axios instance
-const api = axios.create({
-  baseURL: "https://techrush-backend.onrender.com/api",
-});
+const FallbackImage = ({ uri, style }) => {
+  const [hasError, setHasError] = useState(!uri);
+
+  return (
+    <Image
+      source={hasError ? require('../assets/images/club.webp') : { uri }}
+      style={style}
+      onError={() => setHasError(true)}
+    />
+  );
+};
 
 const LoadingScreen = () => (
   <View style={styles.centerScreen}>
     <ActivityIndicator size="large" color={colors.primary} />
-    <Text style={styles.loadingText}>Loading stuff...</Text>
+    <Text style={styles.loadingText}>Loading Feed...</Text>
   </View>
 );
 
 const ErrorScreen = ({ onRetry }) => (
   <View style={styles.centerScreen}>
+    <Ionicons name="cloud-offline-outline" size={60} color="#888" />
     <Text style={styles.errorText}>Oops! Something went wrong.</Text>
     <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
       <Text style={styles.retryButtonText}>Try Again</Text>
@@ -46,7 +54,6 @@ export default function Social() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [role, setRole] = useState("");
-  // Separate state for each data type for clarity
   const [clubs, setClubs] = useState([]);
   const [events, setEvents] = useState([]);
   const [communityPosts, setCommunityPosts] = useState([]);
@@ -64,26 +71,18 @@ export default function Social() {
   const getAllData = useCallback(async () => {
     setIsError(false);
     try {
-      const token = await AsyncStorage.getItem("authToken");
-      if (token) {
-        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      }
+      // Use the centralized API function
+      const { clubs, events, socials } = await getSocialFeed();
       const userRole = await AsyncStorage.getItem("role");
+
+      setClubs(clubs);
+      setEvents(events);
+      setCommunityPosts(socials);
       setRole(userRole);
 
-      const [clubsRes, eventsRes, socialsRes] = await Promise.all([
-        api.get("/clubs"),
-        api.get("/events"),
-        api.get("/social/community"),
-      ]);
-
-      setClubs(clubsRes.data);
-      setEvents(eventsRes.data);
-      setCommunityPosts(socialsRes.data);
     } catch (err) {
       console.error("Error fetching data:", err);
       setIsError(true);
-      Alert.alert("Error", "Failed to get data from the server.");
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -104,40 +103,36 @@ export default function Social() {
     setModalVisible(true);
   };
   
-  // Recreating the card rendering functions for each list
   const renderClubCard = ({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => openModal(item)}>
-      <Image
-        source={{ uri: item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : "https://via.placeholder.com/180x100.png?text=Club" }}
+      <FallbackImage
+        uri={item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : null}
         style={styles.cardImage}
       />
       <View style={styles.cardBody}>
-        <Text style={styles.cardTitle}>{item.name}</Text>
-        <Text style={[styles.cardText,{color:"green"}]}>{item.eventType === "Paid" ? `₹${item.ticketPrice}` : "Free"}</Text>
+        <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
+        <Text style={styles.cardInfo}>{item.eventType}</Text>
       </View>
     </TouchableOpacity>
   );
 
   const renderEventCard = ({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => openModal(item)}>
-      <Image
-        source={{ uri: item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : "https://via.placeholder.com/180x100.png?text=Event" }}
+      <FallbackImage
+        uri={item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : null}
         style={styles.cardImage}
       />
       <View style={styles.cardBody}>
-        <Text style={styles.cardTitle}>{item.title}</Text>
-        <Text style={styles.cardText}>{item.club?.name}</Text>
-        <Text style={[styles.cardText,{color:"green"}]}>{item.eventType === "Paid" ? `₹${item.ticketPrice}` : "Free"}</Text>
+        <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+        <Text style={styles.cardPrice}>{item.eventType === "Paid" ? `₹${item.ticketPrice}` : "Free"}</Text>
       </View>
     </TouchableOpacity>
   );
 
   const renderSocialPost = ({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => openModal(item)}>
-      <Image
-        source={{ uri: item.image ? `https://techrush-backend.onrender.com${item.image}` : '../assets/images/club.webp' }
-      
-      }
+      <FallbackImage
+        uri={item.image ? `https://techrush-backend.onrender.com${item.image}` : null}
         style={styles.cardImage}
       />
       <View style={styles.cardBody}>
@@ -158,6 +153,7 @@ export default function Social() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -194,7 +190,7 @@ export default function Social() {
           contentContainerStyle={styles.listPadding}
         />
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Crafted with ❤️ in Pict</Text>
+          <Text style={styles.footerText}>You're all caught up!</Text>
         </View>
       </ScrollView>
 
@@ -224,13 +220,14 @@ export default function Social() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop:20,
+    paddingTop: 20,
     backgroundColor: "#f0f2f5",
   },
   centerScreen: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#f0f2f5",
   },
   loadingText: {
     marginTop: 10,
@@ -241,22 +238,25 @@ const styles = StyleSheet.create({
   errorText: {
     fontFamily: "Poppins-SemiBold",
     fontSize: 18,
-    color: "red",
+    color: "#444",
+    marginBottom: 20,
   },
   retryButton: {
-    marginTop: 20,
     backgroundColor: colors.primary,
-    padding: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
   },
   retryButtonText: {
     color: "white",
     fontFamily: "Poppins-SemiBold",
+    fontSize: 16,
   },
   sectionHeader: {
     fontSize: 22,
     fontFamily: "Poppins-Bold",
     marginTop: 20,
+    marginBottom: 10,
     marginLeft: 16,
     color: '#1c1e21',
   },
@@ -267,18 +267,24 @@ const styles = StyleSheet.create({
   card: {
     width: 170,
     backgroundColor: "#fff",
-    borderRadius: 25,
+    borderRadius: 18,
     marginRight: 16,
-    marginTop: 10,
     elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
     overflow: 'hidden',
   },
   cardImage: {
     width: "100%",
     height: 100,
+    backgroundColor: '#e9e9e9',
   },
   cardBody: {
-    padding: 10,
+    padding: 12,
+    minHeight: 80,
+    justifyContent: 'center',
   },
   cardTitle: {
     fontSize: 15,
@@ -288,7 +294,19 @@ const styles = StyleSheet.create({
   cardText: {
     fontSize: 12,
     fontFamily: "Poppins-Regular",
-    color: '#333333',
+    color: '#555',
+    marginTop: 4,
+  },
+  cardInfo: {
+    fontSize: 13,
+    fontFamily: "Poppins-SemiBold",
+    color: colors.primary,
+    marginTop: 5,
+  },
+  cardPrice: {
+    fontSize: 14,
+    fontFamily: "Poppins-Bold",
+    color: "#2E7D32",
     marginTop: 5,
   },
   fab: {
@@ -301,17 +319,15 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     justifyContent: "center",
     alignItems: "center",
+    elevation: 8,
   },
   footer: {
     paddingVertical: 50,
-    width: "100%",
-    height:200,
-    justifyContent: "center",
     alignItems: 'center',
-    },
-    footerText: {
+  },
+  footerText: {
     fontFamily: "Poppins-Regular",
     color: "#999",
     fontSize: 14,
-    },
+  },
 });
