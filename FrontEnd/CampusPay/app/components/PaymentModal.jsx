@@ -1,3 +1,4 @@
+//components/PaymentModal.jsx
 import {
   Modal,
   View,
