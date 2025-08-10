@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import colors from './../assets/utils/colors';
+import colors from '../assets/utils/colors';
+import { GroupDetailModal } from './GroupDetailModal'; // Import the new modal
 
 const API_URL = 'https://techrush-backend.onrender.com';
 
-const GroupCircle = ({ group }) => {
+const GroupCircle = ({ group, onGroupPress }) => {
     const displayUser = group.participants[0]?.user;
 
     return (
-        <TouchableOpacity style={styles.groupContainer}>
+        <TouchableOpacity style={styles.groupContainer} onPress={() => onGroupPress(group)}>
             <View style={styles.avatarWrapper}>
                 {displayUser?.profilePicture ? (
                     <Image source={{ uri: `${API_URL}${displayUser.profilePicture}` }} style={styles.avatar} />
@@ -24,24 +25,38 @@ const GroupCircle = ({ group }) => {
     );
 };
 
-
 export const RecentGroups = ({ groups }) => {
+    const [selectedGroup, setSelectedGroup] = useState(null);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+
+    const handleGroupPress = (group) => {
+        setSelectedGroup(group);
+        setIsModalVisible(true);
+    };
+
     if (!groups || groups.length === 0) {
         return null;
     }
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.header}>Recent Groups</Text>
-            <FlatList
-                data={groups}
-                renderItem={({ item }) => <GroupCircle group={item} />}
-                keyExtractor={(item) => item._id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingLeft: 25, paddingRight: 10 }}
+        <>
+            <View style={styles.container}>
+                <Text style={styles.header}>Recent Groups</Text>
+                <FlatList
+                    data={groups}
+                    renderItem={({ item }) => <GroupCircle group={item} onGroupPress={handleGroupPress} />}
+                    keyExtractor={(item) => item._id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ paddingLeft: 25, paddingRight: 10 }}
+                />
+            </View>
+            <GroupDetailModal
+                isVisible={isModalVisible}
+                group={selectedGroup}
+                onClose={() => setIsModalVisible(false)}
             />
-        </View>
+        </>
     );
 };
 

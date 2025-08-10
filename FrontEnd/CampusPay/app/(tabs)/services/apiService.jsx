@@ -148,11 +148,6 @@ export const getGroupDetails = async (groupId) => {
     return response.data;
 };
 
-export const getGroupActivity = async (groupId) => {
-    await setAuthToken();
-    const response = await axiosInstance.get(`/groups/${groupId}/activity`);
-    return response.data;
-};
 
 export const sendGroupMessage = async (groupId, formData) => {
     await setAuthToken();
@@ -168,17 +163,32 @@ export const splitBill = async (groupId, totalAmount, description, splits) => {
     return response.data;
 };
 
-export const settlePayment = async (billId) => {
-    await setAuthToken();
-    const response = await axiosInstance.post(`/bills/${billId}/settle`);
-    return response.data;
-};
 
 export const getMyGroups = async () => {
     await setAuthToken();
     const response = await axiosInstance.get('/groups/my-groups');
     return response.data;
 };
+
+export const getGroupActivity = async (groupId) => {
+    await setAuthToken();
+    const response = await axiosInstance.get(`/groups/${groupId}/activity`);
+    return response.data;
+};
+
+export const settlePayment = async (billId) => {
+    await setAuthToken();
+    try {
+        const response = await axiosInstance.post(`/bills/${billId}/settle`);
+        Alert.alert('Success', 'Your payment has been settled!');
+        return response.data;
+    } catch (error) {
+        Alert.alert('Error', error.response?.data?.message || 'Failed to settle payment.');
+        throw error;
+    }
+};
+
+
 export const getNotifications = async () => {
     await setAuthToken();
     const response = await axiosInstance.get('/notifications');
