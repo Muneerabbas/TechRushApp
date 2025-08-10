@@ -18,7 +18,10 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
 
 import colors from "../assets/utils/colors";
-import SocialModal from "../components/SocialModal";
+import {SocialModal} from "./components/social/SocialModal";
+import {EventModal} from "./components/social/EventModal";
+import {ClubModal} from "../(tabs)/components/social/ClubModal";
+
 import { getSocialFeed } from "./services/apiService";
 
 const FallbackImage = ({ uri, style, type }) => {
@@ -54,7 +57,6 @@ const LoadingScreen = () => (
 
 const ErrorScreen = ({ onRetry }) => (
   <View style={styles.centerScreen}>
-    <Ionicons name="cloud-offline-outline" size={60} color="#888" />
     <Text style={styles.errorText}>Oops! Something went wrong.</Text>
     <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
       <Text style={styles.retryButtonText}>Try Again</Text>
@@ -63,8 +65,12 @@ const ErrorScreen = ({ onRetry }) => (
 );
 
 export default function Social() {
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [ClubselectedItem, setClubSelectedItem] = useState(null);
+  const [ClubmodalVisible, setClubModalVisible] = useState(false);
+  const [EventselectedItem, setEventSelectedItem] = useState(null);
+  const [EventmodalVisible, setEventModalVisible] = useState(false);
+  const [SocialselectedItem, setSocialSelectedItem] = useState(null);
+  const [SocialmodalVisible, setSocialModalVisible] = useState(false);
   const [role, setRole] = useState("");
   const [clubs, setClubs] = useState([]);
   const [events, setEvents] = useState([]);
@@ -108,13 +114,21 @@ export default function Social() {
     getAllData();
   };
 
-  const openModal = (item) => {
-    setSelectedItem(item);
-    setModalVisible(true);
+  const openClubModal = (item) => {
+    setClubSelectedItem(item);
+    setClubModalVisible(true);
   };
   
+  const openEventModal = (item) => {
+    setEventSelectedItem(item);
+    setEventModalVisible(true);
+  };
+  const openSocialModal = (item) => {
+    setSocialSelectedItem(item);
+    setSocialModalVisible(true);
+  };
   const renderClubCard = ({ item }) => (
-    <TouchableOpacity style={styles.card} onPress={() => openModal(item)}>
+    <TouchableOpacity style={styles.card} onPress={() => openClubModal(item)}>
       <FallbackImage
         uri={item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : null}
         style={styles.cardImage}
@@ -122,13 +136,19 @@ export default function Social() {
       />
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.cardInfo}>{item.eventType}</Text>
+        <Text style={styles.cardPrice}>{item.eventType}</Text>
+        {
+
+item.ticketPrice==0?null:<Text style={styles.cardPrice}>₹{item.ticketPrice}</Text>
+
+        }
+
       </View>
     </TouchableOpacity>
   );
 
   const renderEventCard = ({ item }) => (
-    <TouchableOpacity style={styles.card} onPress={() => openModal(item)}>
+    <TouchableOpacity style={styles.card} onPress={() => openEventModal(item)}>
       <FallbackImage
         uri={item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : null}
         style={styles.cardImage}
@@ -142,7 +162,7 @@ export default function Social() {
   );
 
   const renderSocialPost = ({ item }) => (
-    <TouchableOpacity style={styles.card} onPress={() => openModal(item)}>
+    <TouchableOpacity style={styles.card} onPress={() => openSocialModal(item)}>
       <FallbackImage
         uri={item.image ? `https://techrush-backend.onrender.com${item.image}` : null}
         style={styles.cardImage}
@@ -216,16 +236,41 @@ export default function Social() {
         </TouchableOpacity>
       )}
 
-      {selectedItem && (
-        <SocialModal
-          visible={modalVisible}
-          item={selectedItem}
+      {ClubselectedItem && (
+        <ClubModal
+          visible={ClubmodalVisible}
+          item={ClubselectedItem}
           onClose={() => {
-            setModalVisible(false);
-            setSelectedItem(null);
+            setClubModalVisible(false);
+            setClubSelectedItem(null);
           }}
         />
       )}
+
+
+{EventselectedItem && (
+        <EventModal
+          visible={EventmodalVisible}
+          item={EventselectedItem}
+          onClose={() => {
+            setEventModalVisible(false);
+            setEventSelectedItem(null);
+          }}
+        />
+      )}
+
+
+{SocialselectedItem && (
+        <SocialModal
+          visible={SocialmodalVisible}
+          item={SocialselectedItem}
+          onClose={() => {
+            setSocialModalVisible(false);
+            setSocialSelectedItem(null);
+          }}
+        />
+      )}
+
     </SafeAreaView>
   );
 }

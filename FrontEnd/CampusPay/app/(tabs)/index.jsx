@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+} from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts } from "expo-font";
 import axios from "axios";
@@ -17,12 +24,12 @@ export default function HomeScreen() {
     "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
     "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
   });
-  
-  const [name, setName] = useState('');
+
+  const [name, setName] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [splitAmount, setSplitAmount] = useState("");
-  
-  const [searchQuery, setSearchQuery] = useState('');
+
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchedUsers, setSearchedUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
@@ -34,7 +41,7 @@ export default function HomeScreen() {
       setName(username);
       // Fetch recent groups
       try {
-        const token = await AsyncStorage.getItem('authToken');
+        const token = await AsyncStorage.getItem("authToken");
         const res = await axios.get(
           `https://techrush-backend.onrender.com/api/groups/my-groups`,
           {
@@ -66,7 +73,7 @@ export default function HomeScreen() {
     }
     setIsSearching(true);
     try {
-      const token = await AsyncStorage.getItem('authToken');
+      const token = await AsyncStorage.getItem("authToken");
       const res = await axios.get(
         `https://techrush-backend.onrender.com/api/search`,
         {
@@ -84,7 +91,7 @@ export default function HomeScreen() {
       setIsSearching(false);
     }
   };
-  
+
   const handleSelectUser = (user) => {
     setSelectedUser(user);
     setIsModalVisible(true);
@@ -92,33 +99,44 @@ export default function HomeScreen() {
   };
 
   if (!fontsLoaded) {
-    return <View style={styles.loaderContainer}><ActivityIndicator size="large" color={colors.primary} /></View>;
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
   return (
-    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       <Header name={name} />
-      
-      <View style={styles.mainContentArea}>
-        <ScrollView contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <View style={{paddingHorizontal: 25}}>
-              <PayUser
-                  query={searchQuery}
-                  setQuery={setSearchQuery}
-                  users={searchedUsers}
-                  onSelectUser={handleSelectUser}
-                  isSearching={isSearching}
-              />
-            </View>
-            
-            <View style={{paddingHorizontal: 25}}>
-              <QuickActions 
-                  splitAmount={splitAmount}
-                  setSplitAmount={setSplitAmount}
-              />
-            </View>
 
-            <RecentGroups groups={groups} />
+      <View style={styles.mainContentArea}>
+        <ScrollView
+          contentContainerStyle={styles.contentContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={{ paddingHorizontal: 25 }}>
+            <PayUser
+              query={searchQuery}
+              setQuery={setSearchQuery}
+              users={searchedUsers}
+              onSelectUser={handleSelectUser}
+              isSearching={isSearching}
+            />
+          </View>
+
+          <View style={{ paddingHorizontal: 25 }}>
+            <QuickActions
+              splitAmount={splitAmount}
+              setSplitAmount={setSplitAmount}
+            />
+          </View>
+
+          <RecentGroups groups={groups} />
         </ScrollView>
       </View>
 
@@ -135,7 +153,13 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.primary },
-  loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  mainContentArea: { flex: 1, backgroundColor: "#f0f2f5", borderTopLeftRadius: 30, borderTopRightRadius: 30 },
-  contentContainer: { paddingVertical: 25 },
+  loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
+  mainContentArea: {
+    flex: 1,
+    backgroundColor: "#f0f2f5",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+  },
+  contentContainer: { paddingVertical: 25 ,    flex: 1,
+  },
 });

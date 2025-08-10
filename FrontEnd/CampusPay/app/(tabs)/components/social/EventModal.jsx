@@ -1,16 +1,16 @@
-// app/(tabs)/components/social/SocialModal.jsx
-import {React,useState} from "react";
+// app/(tabs)/components/social/EventSocialModal.jsx
+import { React, useState } from "react";
 import {
   Modal,
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../../../assets/utils/colors";
-export const SocialModal = ({ visible, item, onClose }) => {
+export const EventModal = ({ visible, item, onClose }) => {
   if (!item) return null;
 
   const FallbackImage = ({ uri, style, type }) => {
@@ -57,19 +57,38 @@ export const SocialModal = ({ visible, item, onClose }) => {
                 : null
             }
             style={styles.modalImage}
-            type="social"
+            type="event"
           />
           <Text style={styles.modalTitle}>{item.name || item.title}</Text>
           <Text style={styles.modalDescription}>
+            <Text style={{ fontFamily: "Poppins-Bold" }}>Description: </Text>
             {item.description || item.content}
           </Text>
-         
+          <Text
+            style={[
+              styles.modalDescription,
+              { color: "green", fontFamily: "Poppins-SemiBold" },
+            ]}
+          >
           
+            <Text style={{ fontFamily: "Poppins-Bold" }}>Type: </Text>
+            {item.eventType}
+          </Text>
+          {item.eventType == "Paid" ? (
+            <Text
+              style={[
+                styles.modalDescription,
+                { color: "green", fontFamily: "Poppins-SemiBold" },
+              ]}
+            >
+              <Text style={{ fontFamily: "Poppins-Bold" }}>Price: </Text>
+              {item.ticketPrice}
+            </Text>
+          ) : null}
 
-<TouchableOpacity
-style={styles.button}
-><Text style={styles.registertxt}>UpVote </Text></TouchableOpacity>
-
+          <TouchableOpacity style={styles.button}>
+            <Text style={styles.registertxt}>Register Now!</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -89,27 +108,27 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 20,
   },
-  closeButton: { alignSelf: "flex-end" , position:'absolute',margin:3},
+  closeButton: { alignSelf: "flex-end", position: "absolute", margin: 3 },
   modalTitle: { fontSize: 22, fontFamily: "Poppins-Bold", marginVertical: 10,textAlign:"center" },
   modalDescription: { fontSize: 16, fontFamily: "Poppins-Regular" },
-  modalImage:{
-width:"100%",
-height: 200,
-backgroundColor: '#e9e9e9',
-borderRadius:20,
+  modalImage: {
+    width: "100%",
+    height: 200,
+    backgroundColor: "#e9e9e9",
+    borderRadius: 20,
   },
   button: {
-    width: '45%',
+    width: "45%",
     height: 55,
     borderRadius: 12,
-    alignSelf: 'center',
+    alignSelf: "center",
     margin: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'red',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: colors.primary,
   },
   registertxt: {
-    fontFamily: 'Poppins-Bold',
+    fontFamily: "Poppins-Bold",
     color: colors.white,
   },
 });
