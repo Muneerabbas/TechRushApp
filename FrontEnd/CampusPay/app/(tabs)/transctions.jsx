@@ -123,7 +123,8 @@ export default function TransactionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F4F6F9" },
+  container: { flex: 1,     backgroundColor: "#FFFBEB", 
+ },
   heading: {
     fontSize: 28,
     fontFamily: "Poppins-Bold",

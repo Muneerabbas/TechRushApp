@@ -35,7 +35,7 @@ const FallbackImage = ({ uri, style, type }) => {
         return require('../assets/images/social.png');
       case 'club':
       default:
-        return require('../assets/images/club.webp');
+        return require('../assets/images/club.png ');
     }
   };
 

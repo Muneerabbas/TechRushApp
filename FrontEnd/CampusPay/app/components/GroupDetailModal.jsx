@@ -52,32 +52,32 @@ export const GroupDetailModal = ({ isVisible, group, onClose }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [currentUserID, setCurrentUserID] = useState(null);
 
-    useEffect(() => {
-        const fetchActivityAndUser = async () => {
-            if (group) {
-                setIsLoading(true);
-                try {
-                    const userID = await AsyncStorage.getItem('userID');
-                    setCurrentUserID(userID);
-                    const data = await getGroupActivity(group._id);
-                    setActivity(data);
-                } catch (error) {
-                    Alert.alert("Error", "Could not load group details.");
-                } finally {
-                    setIsLoading(false);
-                }
+    const fetchActivityAndUser = async () => {
+        if (group) {
+            setIsLoading(true);
+            try {
+                const userID = await AsyncStorage.getItem('userID');
+                setCurrentUserID(userID);
+                const data = await getGroupActivity(group._id);
+                setActivity(data);
+            } catch (error) {
+            } finally {
+                setIsLoading(false);
             }
-        };
-        fetchActivityAndUser();
-    }, [group]);
+        }
+    };
+
+    useEffect(() => {
+        if (isVisible) {
+            fetchActivityAndUser();
+        }
+    }, [group, isVisible]);
 
     const handleSettle = async (billId) => {
         try {
             await settlePayment(billId);
-            const data = await getGroupActivity(group._id);
-            setActivity(data);
+            fetchActivityAndUser();
         } catch (error) {
-            // Error is already handled in the apiService
         }
     };
 
@@ -146,10 +146,12 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     billContainer: {
-        backgroundColor: colors.primary, 
+        backgroundColor: '#F8F9FA', 
         borderRadius: 15, 
         padding: 15, 
         marginBottom: 15,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
     },
     billHeader: {
         flexDirection: 'row',
@@ -159,42 +161,42 @@ const styles = StyleSheet.create({
     billDescription: { 
         fontSize: 16, 
         fontFamily: 'Poppins-SemiBold', 
-        color: colors.white,
+        color: colors.text,
         flex: 1,
     },
     billAmount: { 
         fontSize: 14, 
         fontFamily: 'Poppins-Bold', 
-        color: colors.white,
+        color: colors.text,
     },
     creatorText: {
         fontSize: 12,
         fontFamily: 'Poppins-Regular',
-        color: '#E0CFFF',
+        color: colors.textSecondary,
         marginTop: 4,
         marginBottom: 10,
     },
     progressBarBackground: {
         height: 8, 
-        backgroundColor: 'rgba(0,0,0,0.2)', 
+        backgroundColor: '#e0e0e0', 
         borderRadius: 4,
         overflow: 'hidden',
     },
     progressBarForeground: { 
         height: '100%', 
-        backgroundColor: colors.secondary, 
+        backgroundColor: colors.primary, 
         borderRadius: 4 
     },
     paymentStatus: { 
         fontSize: 12, 
         fontFamily: 'Poppins-Regular', 
-        color: '#E0CFFF', 
+        color: '#888', 
         marginTop: 5, 
         alignSelf: 'flex-end' 
     },
     userShareContainer: {
         borderTopWidth: 1,
-        borderTopColor: 'rgba(255,255,255,0.2)',
+        borderTopColor: '#E2E8F0',
         marginTop: 15,
         paddingTop: 15,
         flexDirection: 'row',
@@ -203,12 +205,12 @@ const styles = StyleSheet.create({
     },
     yourShareLabel: {
         fontFamily: 'Poppins-Regular',
-        color: '#E0CFFF',
+        color: colors.textSecondary,
         fontSize: 14,
     },
     yourShareAmount: {
         fontFamily: 'Poppins-Bold',
-        color: colors.white,
+        color: colors.text,
         fontSize: 16,
     },
     settleButton: {

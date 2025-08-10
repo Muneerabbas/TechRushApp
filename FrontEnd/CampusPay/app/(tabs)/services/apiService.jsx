@@ -179,7 +179,7 @@ export const getGroupActivity = async (groupId) => {
 export const settlePayment = async (billId) => {
     await setAuthToken();
     try {
-        const response = await axiosInstance.post(`/bills/${billId}/settle`);
+        const response = await axiosInstance.post(`groups/bills/${billId}/settle`);
         Alert.alert('Success', 'Your payment has been settled!');
         return response.data;
     } catch (error) {
