@@ -63,7 +63,6 @@ export const RecentGroups = ({ groups }) => {
 const styles = StyleSheet.create({
     container: {
         marginTop: 20,
-        marginBottom: 10,
     },
     header: {
         fontSize: 20,

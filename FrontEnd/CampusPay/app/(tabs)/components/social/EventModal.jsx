@@ -1,4 +1,3 @@
-// app/(tabs)/components/social/EventSocialModal.jsx
 import { React, useState,useCallback } from "react";
 import {
   Modal,

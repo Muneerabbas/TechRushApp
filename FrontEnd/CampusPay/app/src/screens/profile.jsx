@@ -71,7 +71,7 @@ export default function ProfileScreen() {
       <View style={styles.profileCard}>
         
         <Image
-          source={require('../../assets/images/react-logo.png')}
+          source={require('../../assets/images/student.png')}
           style={styles.profileImage}
         />
         <Text style={styles.name}>{name}</Text>

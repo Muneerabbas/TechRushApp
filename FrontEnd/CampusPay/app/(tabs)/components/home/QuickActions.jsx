@@ -29,7 +29,12 @@ export const QuickActions = ({ splitAmount, setSplitAmount }) => {
           />
           <TouchableOpacity
             style={[styles.splitButton, !splitAmount.trim() && styles.splitButtonDisabled]}
-            onPress={() => router.navigate('/src/screens/Split')}
+            onPress={() =>
+              router.push({
+                pathname: "/src/screens/Split",
+                params: { prevamount: splitAmount }, // sending splitAmount
+              })
+            }
             disabled={!splitAmount.trim()}
           >
             <Text style={styles.splitButtonText}>Split</Text>
@@ -81,7 +86,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     fontFamily: "Poppins-Regular",
-    fontSize: 16,
+    fontSize: 14,
     color: "#333",
   },
   splitButton: {

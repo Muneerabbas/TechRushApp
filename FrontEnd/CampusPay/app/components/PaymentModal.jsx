@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  Image
 } from "react-native";
+
 import colors from "../assets/utils/colors";
 import { useState } from "react";
 import axios from "axios";
@@ -18,6 +20,8 @@ export default function PaymentModal({ data, Payto, receiverid }) {
   const [amount, setAmount] = useState("");
   const [pin, setPin] = useState("");
   const [showPinInput, setShowPinInput] = useState(false);
+
+  const [isLoading, setIsLoading]=useState(false)
 
   const handlePay = async () => {
     if (!amount.trim()) {
@@ -31,7 +35,7 @@ export default function PaymentModal({ data, Payto, receiverid }) {
       alert("Please enter your PIN.");
       return;
     }
-
+setIsLoading(true)
     try {
       const storedPin = await AsyncStorage.getItem("userPin");
 
@@ -102,7 +106,10 @@ export default function PaymentModal({ data, Payto, receiverid }) {
                 placeholderTextColor="#aaa"
               />
             </View>
-          ) : (
+          ) : 
+          
+          
+          (
             <TextInput
               style={styles.pinInput}
               placeholder="••••"
@@ -115,7 +122,6 @@ export default function PaymentModal({ data, Payto, receiverid }) {
             />
           )}
 
-          {/* Conditional Buttons */}
           {!showPinInput ? (
             <TouchableOpacity
               style={[styles.payButton, !amount.trim() && styles.payButtonDisabled]}
@@ -137,6 +143,7 @@ export default function PaymentModal({ data, Payto, receiverid }) {
           <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
             <Text style={styles.cancelText}>{showPinInput ? "Back" : "Cancel"}</Text>
           </TouchableOpacity>
+
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -192,7 +199,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
     paddingVertical: 12,
   },
-  // PIN input styles
   pinInput: {
     fontSize: 24,
     fontFamily: "Poppins-Bold",

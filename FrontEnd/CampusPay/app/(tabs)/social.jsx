@@ -16,7 +16,7 @@ import { useFonts } from "expo-font";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-
+import  FooterComponent  from "../components/Footer";
 import colors from "../assets/utils/colors";
 import {SocialModal} from "./components/social/SocialModal";
 import {EventModal} from "./components/social/EventModal";
@@ -35,7 +35,7 @@ const FallbackImage = ({ uri, style, type }) => {
         return require('../assets/images/social.png');
       case 'club':
       default:
-        return require('../assets/images/club.png ');
+        return require('../assets/images/club.png');
     }
   };
 
@@ -222,9 +222,7 @@ item.ticketPrice==0?null:<Text style={styles.cardPrice}>₹{item.ticketPrice}</T
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.listPadding}
         />
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>You're all caught up!</Text>
-        </View>
+      <FooterComponent/>
       </ScrollView>
 
       {role === "Admin" && (
@@ -379,13 +377,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 8,
   },
-  footer: {
-    paddingVertical: 50,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontFamily: "Poppins-Regular",
-    color: "#999",
-    fontSize: 14,
-  },
+ 
 });
