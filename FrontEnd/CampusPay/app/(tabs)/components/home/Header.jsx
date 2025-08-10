@@ -27,11 +27,11 @@ export const Header = ({ name, role, onReload }) => {
           </TouchableOpacity>
         </View>
         <View style={styles.greetingContainer}>
-            <Text style={styles.greetingText}>
+          <Text style={styles.greetingText}>
             Hello,{"\n"}
             {greetingName}
-            </Text>
-            <Image source={require('../../../assets/images/student.png')} style={styles.studentImage} />
+          </Text>
+          <Image source={require('../../../assets/images/student.png')} style={styles.studentImage} />
         </View>
       </View>
     </ImageBackground>
@@ -40,15 +40,14 @@ export const Header = ({ name, role, onReload }) => {
 
 const styles = StyleSheet.create({
   header: {
-    height: 250, // Increased height
-    justifyContent: 'flex-end',
+    height: 300, 
   },
   backgroundImage: {
     resizeMode: 'cover',
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)', // Dark overlay for better text visibility
+    backgroundColor: 'rgba(0,0,0,0.3)',
     paddingHorizontal: 20,
     paddingTop: 50,
     paddingBottom: 25,
@@ -87,6 +86,6 @@ const styles = StyleSheet.create({
     width: 100,
     height: 140,
     resizeMode: 'contain',
-    marginBottom: -25, // Position it to overlap slightly with the content below
+    marginBottom: -25,
   }
 });

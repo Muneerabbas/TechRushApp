@@ -1,11 +1,11 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Animated,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts } from "expo-font";
@@ -17,7 +17,6 @@ import { Header } from "./components/home/Header";
 import { PayUser } from "./components/home/PayUser";
 import { QuickActions } from "./components/home/QuickActions";
 import { RecentGroups } from "../components/RecentGroups";
-import Footer from "../components/Footer";
 
 export default function HomeScreen() {
   const [fontsLoaded] = useFonts({
@@ -30,33 +29,32 @@ export default function HomeScreen() {
   const [role, setRole] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [splitAmount, setSplitAmount] = useState("");
-
   const [searchQuery, setSearchQuery] = useState("");
   const [searchedUsers, setSearchedUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [groups, setGroups] = useState([]);
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  const fadeGroups = useRef(new Animated.Value(0)).current;
+  const fadeFooter = useRef(new Animated.Value(0)).current;
+  const fadeQuickActions = useRef(new Animated.Value(0)).current;
 
   const loadInitialData = useCallback(async () => {
     const username = await AsyncStorage.getItem("name");
     const userRole = await AsyncStorage.getItem("role");
     setName(username);
     setRole(userRole);
-
     try {
       const token = await AsyncStorage.getItem("authToken");
       const res = await axios.get(
         `https://techrush-backend.onrender.com/api/groups/my-groups`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
       setGroups(res.data || []);
-    } catch (error) {
-      console.error("Failed to fetch groups:", error);
-    }
+    } catch (error) {}
   }, []);
 
   useEffect(() => {
@@ -64,10 +62,35 @@ export default function HomeScreen() {
   }, [loadInitialData]);
 
   useEffect(() => {
+    Animated.timing(fadeGroups, {
+      toValue: 1,
+      duration: 700,
+      useNativeDriver: true,
+    }).start();
+  }, [groups]);
+
+  useEffect(() => {
+    Animated.timing(fadeFooter, {
+      toValue: 1,
+      duration: 700,
+      delay: 300,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  useEffect(() => {
+    Animated.timing(fadeQuickActions, {
+      toValue: 1,
+      duration: 700,
+      delay: 150,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  useEffect(() => {
     const handler = setTimeout(() => {
       handleSearch(searchQuery);
     }, 300);
-
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
@@ -82,15 +105,12 @@ export default function HomeScreen() {
       const res = await axios.get(
         `https://techrush-backend.onrender.com/api/search`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
           params: { query },
         }
       );
       setSearchedUsers(res.data.users || []);
     } catch (error) {
-      console.error("Search error:", error);
       setSearchedUsers([]);
     } finally {
       setIsSearching(false);
@@ -102,6 +122,18 @@ export default function HomeScreen() {
     setIsModalVisible(true);
     setSearchQuery(user.name);
   };
+
+  const payUserScale = scrollY.interpolate({
+    inputRange: [0, 150],
+    outputRange: [1, 0.85],
+    extrapolate: "clamp",
+  });
+
+  const payUserTranslateY = scrollY.interpolate({
+    inputRange: [0, 150],
+    outputRange: [0, -20],
+    extrapolate: "clamp",
+  });
 
   if (!fontsLoaded) {
     return (
@@ -117,14 +149,23 @@ export default function HomeScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <Header name={name} role={role} onReload={loadInitialData} />
-
       <View style={styles.mainContentArea}>
-        <ScrollView
+        <Animated.ScrollView
           contentContainerStyle={styles.contentContainer}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
         >
-          <View style={{ paddingHorizontal: 25 }}>
+          <Animated.View
+            style={{
+              paddingHorizontal: 25,
+              transform: [{ translateY: payUserTranslateY }, { scale: payUserScale }],
+            }}
+          >
             <PayUser
               query={searchQuery}
               setQuery={setSearchQuery}
@@ -132,23 +173,24 @@ export default function HomeScreen() {
               onSelectUser={handleSelectUser}
               isSearching={isSearching}
             />
-          </View>
+          </Animated.View>
 
-          <View style={{ paddingHorizontal: 25 }}>
+          <Animated.View style={{ paddingHorizontal: 25, opacity: fadeQuickActions }}>
             <QuickActions
               splitAmount={splitAmount}
               setSplitAmount={setSplitAmount}
             />
-          </View>
+          </Animated.View>
 
-          <RecentGroups groups={groups} />
+          <Animated.View style={{ opacity: fadeGroups }}>
+            <RecentGroups groups={groups} />
+          </Animated.View>
 
-          <View>
+          <Animated.View style={{ opacity: fadeFooter }}>
             <FooterComponent />
-          </View>
-        </ScrollView>
+          </Animated.View>
+        </Animated.ScrollView>
       </View>
-
       {isModalVisible && selectedUser && (
         <PaymentModal
           receiverid={selectedUser._id}
@@ -171,14 +213,4 @@ const styles = StyleSheet.create({
     marginTop: -20,
   },
   contentContainer: { paddingVertical: 25 },
-  footerComponent: {
-    paddingVertical: 50,
-    height: 200,
-    alignItems: "center",
-  },
-  footerText: {
-    fontFamily: "Poppins-Regular",
-    color: "#999",
-    fontSize: 14,
-  },
 });
