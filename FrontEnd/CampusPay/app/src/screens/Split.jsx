@@ -1,4 +1,3 @@
-// app/src/screens/Split.jsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -11,354 +10,267 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  SafeAreaView,
+  FlatList,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import colors from "../../assets/utils/colors";
+import { searchUsers, createGroup, splitBill } from "../../(tabs)/services/apiService";
 
-// A function to fetch users from a real API endpoint.
-// You'll need to replace the URL and method with your actual backend details.
-const searchUsersFromAPI = async (query) => {
-  if (!query.trim()) {
-    return [];
-  }
-
-  // Replace this URL with your actual backend API endpoint for searching users.
-  // The 'query' parameter is what you'll pass to your backend.
-  const apiUrl = `https://techrush-backend.onrender.com/api/search/?query=${query}`;
-
-  try {
-    const response = await fetch(apiUrl, {
-      method: "GET", // Or "POST" if your API requires it.
-      headers: {
-        // Add any necessary headers, like an Authorization token.
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`API call failed with status: ${response.status}`);
-    }
-
-    // The API should return an array of user objects.
-    const users = await response.json();
-    return users;
-
-  } catch (error) {
-    console.error("Failed to fetch users from API:", error);
-    // You might want to throw the error to be handled by the calling function.
-    throw error;
-  }
-};
+const API_URL = 'https://techrush-backend.onrender.com';
 
 export default function SplitPaymentScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
   const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [userResults, setUserResults] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Debouncing search requests with useEffect.
   useEffect(() => {
-    // Set a timer to wait for the user to stop typing.
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery.trim() === "") {
         setUserResults([]);
         return;
       }
-
-      setLoading(true);
+      setIsSearching(true);
       try {
-        const results = await searchUsersFromAPI(searchQuery);
-        // Filter out users who are already selected before displaying them.
-        const currentlySelectedIds = new Set(selectedUsers.map(user => user.id));
-        const newResults = results.filter(user => !currentlySelectedIds.has(user.id));
+        const results = await searchUsers(searchQuery);
+        const currentlySelectedIds = new Set(selectedUsers.map(user => user._id));
+        const newResults = results.filter(user => !currentlySelectedIds.has(user._id));
         setUserResults(newResults);
       } catch (error) {
-        console.error("Failed to fetch users:", error);
-        Alert.alert("Error", "Failed to fetch users. Please try again.");
+        Alert.alert("Error", "Failed to fetch users.");
         setUserResults([]);
       } finally {
-        setLoading(false);
+        setIsSearching(false);
       }
-    }, 300); // Debounce delay of 300ms.
+    }, 300);
 
-    // Cleanup function to clear the timeout if the user types again.
     return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, selectedUsers]); // Rerun the effect when the search query or selected users change.
+  }, [searchQuery, selectedUsers]);
 
   const handleSelectUser = (user) => {
-    // Check if the user is not already selected to prevent duplicates.
-    const isAlreadySelected = selectedUsers.some(selected => selected.id === user.id);
-    if (!isAlreadySelected) {
-      setSelectedUsers([...selectedUsers, user]);
-    }
-    setUserResults([]); // Clear search results after selection.
-    setSearchQuery(""); // Clear search query after selection.
+    setSelectedUsers([...selectedUsers, user]);
+    setUserResults([]);
+    setSearchQuery("");
   };
 
   const handleRemoveUser = (userId) => {
-    setSelectedUsers(selectedUsers.filter((user) => user.id !== userId));
+    setSelectedUsers(selectedUsers.filter((user) => user._id !== userId));
   };
 
-  const handleSplit = () => {
-    if (!amount || selectedUsers.length === 0) {
-      Alert.alert(
-        "Missing Information",
-        "Please enter an amount and select at least one person to split with."
-      );
+  const handleSplit = async () => {
+    if (!amount || !description.trim() || selectedUsers.length === 0) {
+      Alert.alert("Missing Information", "Please enter an amount, description, and select at least one person.");
       return;
     }
-    navigation.navigate("ConfirmSplit", { amount, selectedUsers });
+    setIsSubmitting(true);
+    try {
+      const participantIds = selectedUsers.map(u => u._id);
+      const groupName = `Split: ${description}`;
+      
+      const groupResponse = await createGroup(groupName, participantIds, `Bill split for ${description}`);
+      const groupId = groupResponse.group._id;
+      
+      await splitBill(groupId, parseFloat(amount), description);
+      
+      Alert.alert("Success", "The bill has been split successfully!");
+      router.back();
+    } catch (error) {
+      Alert.alert("Error", "Failed to split the bill. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={26} color={colors.white} />
-        </TouchableOpacity>
-        <Text style={styles.headerText}>Split a Payment</Text>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.body}>
-        {/* Total Amount Section */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Total Amount</Text>
-          <View style={styles.amountInputContainer}>
-            <Text style={styles.currencySymbol}>$</Text>
-            <TextInput
-              style={styles.amountInput}
-              placeholder="0.00"
-              value={amount}
-              onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ""))}
-              keyboardType="numeric"
-              placeholderTextColor="#aaa"
-            />
-          </View>
-        </View>
-
-        {/* Search for Users Section */}
-        <View style={styles.section}>
-          <Text style={styles.label}>Split with</Text>
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#777" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Find a person to split with"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholderTextColor="#aaa"
-            />
-          </View>
-
-          {/* User search results or loading indicator */}
-          <View style={styles.userResultsWrapper}>
-            {loading ? (
-              <ActivityIndicator style={styles.loadingIndicator} size="small" color={colors.primary} />
-            ) : userResults.length > 0 ? (
-              <View style={styles.userResultsContainer}>
-                {userResults.map((user) => (
-                  <TouchableOpacity
-                    key={user.id}
-                    style={styles.userResultItem}
-                    onPress={() => handleSelectUser(user)}
-                  >
-                    <Text style={styles.userResultText}>{user.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            ) : (
-              searchQuery.length > 0 && (
-                <Text style={styles.noResultsText}>No users found</Text>
-              )
-            )}
-          </View>
-        </View>
-
-        {/* Selected Users Preview Section */}
-        {selectedUsers.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.label}>Selected people</Text>
-            <View style={styles.userChipContainer}>
-              {selectedUsers.map((user) => (
-                <View key={user.id} style={styles.userChip}>
-                  <Text style={styles.userChipText}>{user.name}</Text>
-                  <TouchableOpacity
-                    onPress={() => handleRemoveUser(user.id)}
-                    style={styles.removeUserBtn}
-                  >
-                    <Ionicons name="close-circle" size={18} color={colors.primary} />
-                  </TouchableOpacity>
-                </View>
-              ))}
+  const renderUserResult = ({ item }) => (
+    <TouchableOpacity style={styles.userResultItem} onPress={() => handleSelectUser(item)}>
+        {item.profilePicture ? (
+            <Image source={{ uri: `${API_URL}${item.profilePicture}` }} style={styles.avatar} />
+        ) : (
+            <View style={styles.avatarPlaceholder}>
+                <Ionicons name="person-outline" size={20} color={colors.primary} />
             </View>
-          </View>
         )}
-      </ScrollView>
+        <Text style={styles.userResultText}>{item.name}</Text>
+    </TouchableOpacity>
+  );
 
-      {/* Split Button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.splitBtn, (!amount || selectedUsers.length === 0) && styles.splitBtnDisabled]}
-          onPress={handleSplit}
-          disabled={!amount || selectedUsers.length === 0}
-        >
-          <Text style={styles.splitText}>Calculate Split</Text>
-          <Ionicons name="arrow-forward" size={20} color={colors.white} />
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+  return (
+    <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView style={{flex: 1}} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                    <Ionicons name="arrow-back" size={26} color={colors.white} />
+                </TouchableOpacity>
+                <Text style={styles.headerText}>Split a Payment</Text>
+            </View>
+
+            <ScrollView contentContainerStyle={styles.body}>
+                <View style={styles.section}>
+                    <Text style={styles.label}>Total Amount</Text>
+                    <View style={styles.amountInputContainer}>
+                        <Text style={styles.currencySymbol}>₹</Text>
+                        <TextInput
+                            style={styles.amountInput}
+                            placeholder="0.00"
+                            value={amount}
+                            onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ""))}
+                            keyboardType="numeric"
+                            placeholderTextColor="#aaa"
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.label}>What is this for?</Text>
+                    <TextInput
+                        style={styles.descriptionInput}
+                        placeholder="e.g., Dinner, Movie Tickets"
+                        value={description}
+                        onChangeText={setDescription}
+                        placeholderTextColor="#aaa"
+                    />
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.label}>Split with</Text>
+                    <View style={styles.searchContainer}>
+                        <Ionicons name="search" size={20} color="#777" />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Find people to split with"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            placeholderTextColor="#aaa"
+                        />
+                    </View>
+
+                    {isSearching ? (
+                        <ActivityIndicator style={{ marginTop: 20 }} size="small" color={colors.primary} />
+                    ) : (
+                        <FlatList
+                            data={userResults}
+                            renderItem={renderUserResult}
+                            keyExtractor={(item) => item._id}
+                            style={styles.userResultsContainer}
+                            scrollEnabled={false}
+                        />
+                    )}
+                </View>
+
+                {selectedUsers.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.label}>Selected people ({selectedUsers.length})</Text>
+                        <View style={styles.userChipContainer}>
+                        {selectedUsers.map((user) => (
+                            <View key={user._id} style={styles.userChip}>
+                            <Text style={styles.userChipText}>{user.name}</Text>
+                            <TouchableOpacity onPress={() => handleRemoveUser(user._id)} style={styles.removeUserBtn}>
+                                <Ionicons name="close-circle" size={20} color={colors.primary} />
+                            </TouchableOpacity>
+                            </View>
+                        ))}
+                        </View>
+                    </View>
+                )}
+            </ScrollView>
+
+            <View style={styles.footer}>
+                <TouchableOpacity
+                    style={[styles.splitBtn, (!amount || selectedUsers.length === 0 || isSubmitting) && styles.splitBtnDisabled]}
+                    onPress={handleSplit}
+                    disabled={!amount || selectedUsers.length === 0 || isSubmitting}
+                >
+                    {isSubmitting ? (
+                        <ActivityIndicator color={colors.white} />
+                    ) : (
+                        <>
+                            <Text style={styles.splitText}>Split Bill</Text>
+                            <Ionicons name="arrow-forward" size={20} color={colors.white} />
+                        </>
+                    )}
+                </TouchableOpacity>
+            </View>
+        </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.primary,
-  },
+  safeArea: { flex: 1, backgroundColor: colors.primary },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    paddingTop: 50,
-    paddingBottom: 20,
-    backgroundColor: colors.primary,
+    flexDirection: "row", alignItems: "center", paddingHorizontal: 15,
+    paddingTop: 50, paddingBottom: 20,
   },
-  backBtn: {
-    marginRight: 15,
-  },
-  headerText: {
-    fontSize: 22,
-    color: colors.white,
-    fontFamily: "Poppins-Bold",
-  },
+  backBtn: { marginRight: 15, padding: 5 },
+  headerText: { fontSize: 22, color: colors.white, fontFamily: "Poppins-Bold" },
   body: {
-    flexGrow: 1,
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    padding: 25,
+    flexGrow: 1, backgroundColor: '#F4F6F9', borderTopLeftRadius: 30,
+    borderTopRightRadius: 30, padding: 25,
   },
-  section: {
-    marginBottom: 25,
-  },
+  section: { marginBottom: 25 },
   label: {
-    fontSize: 16,
-    color: "#555",
-    fontFamily: "Poppins-SemiBold",
-    marginBottom: 8,
+    fontSize: 16, color: "#555", fontFamily: "Poppins-SemiBold", marginBottom: 10,
   },
   amountInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+    flexDirection: "row", alignItems: "center", backgroundColor: colors.white,
+    borderRadius: 12, paddingHorizontal: 15, elevation: 2, shadowColor: '#000', shadowOpacity: 0.05,
   },
-  currencySymbol: {
-    fontSize: 24,
-    fontFamily: "Poppins-Bold",
-    color: colors.primary,
-    marginRight: 5,
-  },
+  currencySymbol: { fontSize: 24, fontFamily: "Poppins-Bold", color: colors.primary, marginRight: 5 },
   amountInput: {
-    flex: 1,
-    fontSize: 24,
-    fontFamily: "Poppins-Bold",
-    color: colors.primary,
+    flex: 1, fontSize: 24, fontFamily: "Poppins-Bold",
+    color: colors.primary, paddingVertical: 15,
+  },
+  descriptionInput: {
+    backgroundColor: colors.white, borderRadius: 12, paddingHorizontal: 15,
+    paddingVertical: 15, fontFamily: "Poppins-Regular", fontSize: 16, elevation: 2,
   },
   searchContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    flexDirection: "row", alignItems: "center", backgroundColor: colors.white,
+    borderRadius: 12, paddingHorizontal: 15, paddingVertical: 12, elevation: 2,
   },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    fontFamily: "Poppins-Regular",
-    fontSize: 16,
-  },
-  userResultsWrapper: {
-    marginTop: 10,
-  },
-  loadingIndicator: {
-    marginTop: 10,
-  },
-  noResultsText: {
-    marginTop: 10,
-    textAlign: "center",
-    color: "#777",
-    fontFamily: "Poppins-Regular",
-  },
+  searchInput: { flex: 1, marginLeft: 10, fontFamily: "Poppins-Regular", fontSize: 16 },
   userResultsContainer: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#e0e0e0",
+    marginTop: 10, backgroundColor: "#fff", borderRadius: 12,
+    maxHeight: 180,
   },
   userResultItem: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    flexDirection: 'row', alignItems: 'center', padding: 15,
+    borderBottomWidth: 1, borderBottomColor: "#eee",
   },
-  userResultText: {
-    fontFamily: "Poppins-Regular",
-    fontSize: 16,
-    color: "#444",
+  avatar: { width: 40, height: 40, borderRadius: 20, marginRight: 15 },
+  avatarPlaceholder: {
+    width: 40, height: 40, borderRadius: 20, marginRight: 15,
+    backgroundColor: '#E9EAF0', justifyContent: 'center', alignItems: 'center',
   },
-  userChipContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
+  userResultText: { fontFamily: "Poppins-SemiBold", fontSize: 15, color: "#444" },
+  userChipContainer: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   userChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#e6f0ff",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginRight: 8,
-    marginBottom: 8,
+    flexDirection: "row", alignItems: "center", backgroundColor: "#e6f0ff",
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20,
   },
   userChipText: {
-    fontSize: 14,
-    color: colors.primary,
-    fontFamily: "Poppins-Medium",
-    marginRight: 4,
+    fontSize: 14, color: colors.primary,
+    fontFamily: "Poppins-SemiBold", marginRight: 4,
   },
-  removeUserBtn: {
-    marginLeft: 5,
-  },
+  removeUserBtn: { marginLeft: 5 },
   footer: {
-    backgroundColor: colors.white,
-    padding: 25,
-    borderTopWidth: 1,
+    backgroundColor: colors.white, padding: 25, borderTopWidth: 1,
     borderColor: "#f0f0f0",
   },
   splitBtn: {
-    flexDirection: "row",
-    backgroundColor: colors.primary,
-    paddingVertical: 15,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
+    flexDirection: "row", backgroundColor: colors.primary, paddingVertical: 15,
+    borderRadius: 12, justifyContent: "center", alignItems: "center",
   },
-  splitBtnDisabled: {
-    backgroundColor: "#a0c4ff",
-  },
+  splitBtnDisabled: { backgroundColor: "#a0c4ff" },
   splitText: {
-    color: colors.white,
-    fontSize: 16,
-    fontFamily: "Poppins-SemiBold",
-    marginRight: 8,
+    color: colors.white, fontSize: 16,
+    fontFamily: "Poppins-SemiBold", marginRight: 8,
   },
 });
