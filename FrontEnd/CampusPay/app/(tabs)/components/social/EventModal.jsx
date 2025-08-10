@@ -1,5 +1,5 @@
 // app/(tabs)/components/social/EventSocialModal.jsx
-import { React, useState } from "react";
+import { React, useState,useCallback } from "react";
 import {
   Modal,
   View,
@@ -7,11 +7,16 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Alert
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../../../assets/utils/colors";
+import { EPaymentModal } from "./EPaymentModal";
 export const EventModal = ({ visible, item, onClose }) => {
+
+
   if (!item) return null;
+const [RegisterModal,setRegisterModal]=useState(false)
 
   const FallbackImage = ({ uri, style, type }) => {
     const [hasError, setHasError] = useState(!uri);
@@ -37,6 +42,24 @@ export const EventModal = ({ visible, item, onClose }) => {
     );
   };
 
+const handleEventRegister =useCallback(async ()=>{
+
+  if(item.eventType == "Paid" ){
+    setRegisterModal(true);
+  }
+  else{
+    Alert.alert("Successfully joined the club!");
+
+    onClose();
+    const res = await registerForEvent(item._id);
+    console.log("Join club successful:", res.data);
+   
+
+  }
+
+
+
+})
   return (
     <Modal
       visible={visible}
@@ -86,10 +109,19 @@ export const EventModal = ({ visible, item, onClose }) => {
             </Text>
           ) : null}
 
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={handleEventRegister}>
             <Text style={styles.registertxt}>Register Now!</Text>
           </TouchableOpacity>
         </View>
+
+{RegisterModal?<EPaymentModal
+  data={()=>setRegisterModal(!RegisterModal)}
+  eventID={item._id}
+    onClose={onClose}
+
+
+/>:null}
+
       </View>
     </Modal>
   );

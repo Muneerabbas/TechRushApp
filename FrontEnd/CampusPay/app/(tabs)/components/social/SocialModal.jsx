@@ -1,4 +1,3 @@
-// app/(tabs)/components/social/SocialModal.jsx
 import {React,useState} from "react";
 import {
   Modal,
@@ -6,13 +5,17 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image
+  Image,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import colors from "../../../assets/utils/colors";
 export const SocialModal = ({ visible, item, onClose }) => {
   if (!item) return null;
-
+function handleUpvote() {
+  Alert.alert("UpVote Sucessfull")
+  onClose();
+}
   const FallbackImage = ({ uri, style, type }) => {
     const [hasError, setHasError] = useState(!uri);
 
@@ -68,6 +71,7 @@ export const SocialModal = ({ visible, item, onClose }) => {
 
 <TouchableOpacity
 style={styles.button}
+onPress={handleUpvote}
 ><Text style={styles.registertxt}>UpVote </Text></TouchableOpacity>
 
         </View>

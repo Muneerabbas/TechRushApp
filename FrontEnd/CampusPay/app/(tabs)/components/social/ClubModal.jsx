@@ -1,5 +1,5 @@
-// app/(tabs)/components/social/ClubModal.jsx
-import { React, useState } from "react";
+// app/(tabs)/components/social/EventSocialModal.jsx
+import { React, useCallback, useState } from "react";
 import {
   Modal,
   View,
@@ -7,12 +7,17 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
+  Alert
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { joinClub } from "../../services/apiService";
+ 
 import colors from "../../../assets/utils/colors";
+import { CPaymentModal } from "./CPaymentModal";
+
 export const ClubModal = ({ visible, item, onClose }) => {
   if (!item) return null;
-
+const [JoinModal,SetJoinModal]=useState(false)
   const FallbackImage = ({ uri, style, type }) => {
     const [hasError, setHasError] = useState(!uri);
 
@@ -37,6 +42,26 @@ export const ClubModal = ({ visible, item, onClose }) => {
     );
   };
 
+
+
+const handleClubJoin =useCallback(async ()=>{
+
+  if(item.eventType == "Paid" ){
+    SetJoinModal(true);
+  }
+  else{
+    Alert.alert("Successfully joined the club!");
+
+    onClose();
+    const res = await joinClub(clubID);
+    console.log("Join club successful:", res.data);
+   
+
+  }
+
+
+
+})
   return (
     <Modal
       visible={visible}
@@ -70,6 +95,7 @@ export const ClubModal = ({ visible, item, onClose }) => {
               { color: "green", fontFamily: "Poppins-SemiBold" },
             ]}
           >
+          
             <Text style={{ fontFamily: "Poppins-Bold" }}>Type: </Text>
             {item.eventType}
           </Text>
@@ -85,10 +111,16 @@ export const ClubModal = ({ visible, item, onClose }) => {
             </Text>
           ) : null}
 
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={handleClubJoin}>
             <Text style={styles.registertxt}>Register Now!</Text>
           </TouchableOpacity>
         </View>
+    {JoinModal?  <CPaymentModal
+      data={()=>SetJoinModal(!JoinModal)}
+      clubID={item._id}
+      Close={onClose}
+
+        />:null}
       </View>
     </Modal>
   );
