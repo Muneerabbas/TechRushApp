@@ -9,6 +9,7 @@ import colors from "../assets/utils/colors";
 import { Header } from "./components/home/Header";
 import { PayUser } from "./components/home/PayUser";
 import { QuickActions } from "./components/home/QuickActions";
+import { RecentGroups } from "../components/RecentGroups"; // Corrected import path
 
 export default function HomeScreen() {
   const [fontsLoaded] = useFonts({
@@ -25,13 +26,29 @@ export default function HomeScreen() {
   const [searchedUsers, setSearchedUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [groups, setGroups] = useState([]); // State for recent groups
 
   useEffect(() => {
-    const loadUsername = async () => {
+    const loadInitialData = async () => {
       const username = await AsyncStorage.getItem("name");
       setName(username);
+      // Fetch recent groups
+      try {
+        const token = await AsyncStorage.getItem('authToken');
+        const res = await axios.get(
+          `https://techrush-backend.onrender.com/api/groups/my-groups`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        setGroups(res.data || []);
+      } catch (error) {
+        console.error("Failed to fetch groups:", error);
+      }
     };
-    loadUsername();
+    loadInitialData();
   }, []);
 
   useEffect(() => {
@@ -84,17 +101,24 @@ export default function HomeScreen() {
       
       <View style={styles.mainContentArea}>
         <ScrollView contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            <PayUser
-                query={searchQuery}
-                setQuery={setSearchQuery}
-                users={searchedUsers}
-                onSelectUser={handleSelectUser}
-                isSearching={isSearching}
-            />
-            <QuickActions 
-                splitAmount={splitAmount}
-                setSplitAmount={setSplitAmount}
-            />
+            <View style={{paddingHorizontal: 25}}>
+              <PayUser
+                  query={searchQuery}
+                  setQuery={setSearchQuery}
+                  users={searchedUsers}
+                  onSelectUser={handleSelectUser}
+                  isSearching={isSearching}
+              />
+            </View>
+            
+            <View style={{paddingHorizontal: 25}}>
+              <QuickActions 
+                  splitAmount={splitAmount}
+                  setSplitAmount={setSplitAmount}
+              />
+            </View>
+
+            <RecentGroups groups={groups} />
         </ScrollView>
       </View>
 
@@ -113,5 +137,5 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.primary },
   loaderContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   mainContentArea: { flex: 1, backgroundColor: "#f0f2f5", borderTopLeftRadius: 30, borderTopRightRadius: 30 },
-  contentContainer: { padding: 25 },
+  contentContainer: { paddingVertical: 25 },
 });

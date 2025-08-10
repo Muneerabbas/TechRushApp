@@ -63,7 +63,6 @@ export const joinClub = async (clubId) => {
   return response.data;
 };
 
-// --- EVENT APIs ---
 
 export const createEvent = async (formData) => {
     await setAuthToken();
@@ -103,7 +102,6 @@ export const registerForEvent = async (eventId) => {
   return response.data;
 };
 
-// --- SOCIAL POST APIs ---
 
 export const getSocialFeed = async () => {
   await setAuthToken();
@@ -123,7 +121,6 @@ export const shareActivity = async (formData) => {
   return response.data;
 };
 
-// --- TRANSACTION APIs ---
 
 export const getTransactionHistory = async () => {
   await setAuthToken();
@@ -177,7 +174,11 @@ export const settlePayment = async (billId) => {
     return response.data;
 };
 
-
+export const getMyGroups = async () => {
+    await setAuthToken();
+    const response = await axiosInstance.get('/groups/my-groups');
+    return response.data;
+};
 export const getNotifications = async () => {
     await setAuthToken();
     const response = await axiosInstance.get('/notifications');
