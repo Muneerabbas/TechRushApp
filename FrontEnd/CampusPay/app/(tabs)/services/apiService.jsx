@@ -22,6 +22,7 @@ export const getMyProfile = async () => {
     return response.data;
 };
 
+
 export const search = async (query) => {
   if (!query.trim()) return { users: [], clubs: [], events: [], groups: [] };
   await setAuthToken();

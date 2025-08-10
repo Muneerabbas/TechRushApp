@@ -21,12 +21,24 @@ import colors from "../assets/utils/colors";
 import SocialModal from "../components/SocialModal";
 import { getSocialFeed } from "./services/apiService";
 
-const FallbackImage = ({ uri, style }) => {
+const FallbackImage = ({ uri, style, type }) => {
   const [hasError, setHasError] = useState(!uri);
+
+  const getDefaultImage = () => {
+    switch (type) {
+      case 'event':
+        return require('../assets/images/event.png');
+      case 'social':
+        return require('../assets/images/social.png');
+      case 'club':
+      default:
+        return require('../assets/images/club.webp');
+    }
+  };
 
   return (
     <Image
-      source={hasError ? require('../assets/images/club.webp') : { uri }}
+      source={hasError ? getDefaultImage() : { uri }}
       style={style}
       onError={() => setHasError(true)}
     />
@@ -71,7 +83,6 @@ export default function Social() {
   const getAllData = useCallback(async () => {
     setIsError(false);
     try {
-      // Use the centralized API function
       const { clubs, events, socials } = await getSocialFeed();
       const userRole = await AsyncStorage.getItem("role");
 
@@ -79,7 +90,6 @@ export default function Social() {
       setEvents(events);
       setCommunityPosts(socials);
       setRole(userRole);
-
     } catch (err) {
       console.error("Error fetching data:", err);
       setIsError(true);
@@ -108,6 +118,7 @@ export default function Social() {
       <FallbackImage
         uri={item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : null}
         style={styles.cardImage}
+        type="club"
       />
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
@@ -121,6 +132,7 @@ export default function Social() {
       <FallbackImage
         uri={item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : null}
         style={styles.cardImage}
+        type="event"
       />
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
@@ -134,6 +146,7 @@ export default function Social() {
       <FallbackImage
         uri={item.image ? `https://techrush-backend.onrender.com${item.image}` : null}
         style={styles.cardImage}
+        type="social"
       />
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle}>{item.author?.name}</Text>
