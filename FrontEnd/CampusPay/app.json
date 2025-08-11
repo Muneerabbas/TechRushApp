@@ -4,7 +4,7 @@
     "slug": "CampusPay",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./app/assets/images/image.png",
     "scheme": "campuspay",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

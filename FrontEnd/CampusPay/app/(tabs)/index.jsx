@@ -25,6 +25,7 @@ import { QuickActions } from "./components/home/QuickActions";
 import { RecentGroups } from "../components/RecentGroups";
 import { scanIdCard } from "../services/idCardScanner";
 
+// Loading modal for initial font loading
 const LoadingModal = ({ visible }) => (
   <Modal transparent={true} animationType="fade" visible={visible}>
     <View style={styles.loadingOverlay}>
@@ -37,12 +38,14 @@ const LoadingModal = ({ visible }) => (
 );
 
 export default function HomeScreen() {
+  // Font loading state
   const [fontsLoaded] = useFonts({
     "Poppins-Bold": require("../assets/fonts/Poppins-Bold.ttf"),
     "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
     "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
+  // Component state variables
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -53,12 +56,11 @@ export default function HomeScreen() {
   const [isSearching, setIsSearching] = useState(false);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [groups, setGroups] = useState([]);
+  
+  // Animated value for scroll position
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  const fadeGroups = useRef(new Animated.Value(0)).current;
-  const fadeFooter = useRef(new Animated.Value(0)).current;
-  const fadeQuickActions = useRef(new Animated.Value(0)).current;
-
+  // Function to load initial user data and groups
   const loadInitialData = useCallback(async () => {
     const username = await AsyncStorage.getItem("name");
     const userRole = await AsyncStorage.getItem("role");
@@ -73,39 +75,17 @@ export default function HomeScreen() {
         }
       );
       setGroups(res.data || []);
-    } catch (error) {}
+    } catch (error) {
+      // Silently fail on group fetch error
+    }
   }, []);
 
+  // Load data on component mount
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
 
-  useEffect(() => {
-    Animated.timing(fadeGroups, {
-      toValue: 1,
-      duration: 700,
-      useNativeDriver: true,
-    }).start();
-  }, [groups]);
-
-  useEffect(() => {
-    Animated.timing(fadeFooter, {
-      toValue: 1,
-      duration: 700,
-      delay: 300,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  useEffect(() => {
-    Animated.timing(fadeQuickActions, {
-      toValue: 1,
-      duration: 700,
-      delay: 150,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
+  // Handle search query changes with a debounce
   useEffect(() => {
     const handler = setTimeout(() => {
       handleSearch(searchQuery);
@@ -113,6 +93,7 @@ export default function HomeScreen() {
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
+  // Function to search for users
   const handleSearch = async (query) => {
     if (!query.trim()) {
       setSearchedUsers([]);
@@ -136,12 +117,14 @@ export default function HomeScreen() {
     }
   };
 
+  // Function to handle selecting a user from search results
   const handleSelectUser = (user) => {
     setSelectedUser(user);
     setIsModalVisible(true);
     setSearchQuery(user.name);
   };
 
+  // Function to handle scanning an ID card
   const handleScanId = async () => {
     setOcrLoading(true);
     try {
@@ -155,7 +138,8 @@ export default function HomeScreen() {
       setOcrLoading(false);
     }
   };
-
+  
+  // Interpolations for scroll animation
   const payUserScale = scrollY.interpolate({
     inputRange: [0, 150],
     outputRange: [1, 0.9],
@@ -168,6 +152,7 @@ export default function HomeScreen() {
     extrapolate: "clamp",
   });
 
+  // Show loading modal until fonts are loaded
   if (!fontsLoaded) {
     return <LoadingModal visible={true} />;
   }
@@ -229,20 +214,20 @@ export default function HomeScreen() {
             )}
           </Animated.View>
 
-          <Animated.View style={{ paddingHorizontal: 25, opacity: fadeQuickActions }}>
+          <View style={{ paddingHorizontal: 25 }}>
             <QuickActions
               splitAmount={splitAmount}
               setSplitAmount={setSplitAmount}
             />
-          </Animated.View>
+          </View>
 
-          <Animated.View style={{ opacity: fadeGroups }}>
+          <View>
             <RecentGroups groups={groups} />
-          </Animated.View>
+          </View>
 
-          <Animated.View style={{ opacity: fadeFooter }}>
+          <View>
             <FooterComponent />
-          </Animated.View>
+          </View>
         </Animated.ScrollView>
       </View>
       {isModalVisible && selectedUser && (

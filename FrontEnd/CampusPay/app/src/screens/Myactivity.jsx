@@ -62,6 +62,7 @@ const ErrorScreen = ({ onRetry }) => (
 
 const EmptyState = ({ message }) => (
     <View style={styles.emptyContainer}>
+        <Ionicons name="cloud-offline-outline" size={40} color="#A0AEC0" />
         <Text style={styles.emptyText}>{message}</Text>
     </View>
 );
@@ -111,6 +112,7 @@ export default function MyActivity() {
 
   const handleRefresh = () => {
     setIsRefreshing(true);
+    fetchData();
   };
 
   const openClubModal = (item) => {
@@ -181,14 +183,13 @@ export default function MyActivity() {
 
   return (
     <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.navigate("../../../src/screens/home")}>
-                <Ionicons name="arrow-back" size={24} color="#1A202C" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>My Activity</Text>
-            <View style={{width: 44}} />
-        </View>
-
+      <View style={styles.header}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <Ionicons name="arrow-back" size={28} color="#1A202C" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>My Activity</Text>
+          <View style={{width: 44}} />
+      </View>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -199,41 +200,43 @@ export default function MyActivity() {
           />
         }
       >
-        <Text style={styles.sectionHeader}>My Clubs</Text>
-        {myClubs.length > 0 ? (
-            <FlatList
-                data={myClubs}
-                renderItem={renderClubCard}
-                keyExtractor={(item) => item._id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.listPadding}
-            />
-        ) : <EmptyState message="You haven't joined any clubs yet." />}
+        <View style={styles.contentArea}>
+            <Text style={styles.sectionHeader}>My Clubs</Text>
+            {myClubs.length > 0 ? (
+                <FlatList
+                    data={myClubs}
+                    renderItem={renderClubCard}
+                    keyExtractor={(item) => item._id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.listPadding}
+                />
+            ) : <EmptyState message="You haven't joined any clubs yet." />}
 
-        <Text style={styles.sectionHeader}>My Events</Text>
-        {myEvents.length > 0 ? (
-            <FlatList
-                data={myEvents}
-                renderItem={renderEventCard}
-                keyExtractor={(item) => item._id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.listPadding}
-            />
-        ) : <EmptyState message="You aren't registered for any events." />}
+            <Text style={styles.sectionHeader}>My Events</Text>
+            {myEvents.length > 0 ? (
+                <FlatList
+                    data={myEvents}
+                    renderItem={renderEventCard}
+                    keyExtractor={(item) => item._id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.listPadding}
+                />
+            ) : <EmptyState message="You aren't registered for any events." />}
 
-        <Text style={styles.sectionHeader}>My Posts</Text>
-        {myPosts.length > 0 ? (
-            <FlatList
-                data={myPosts}
-                renderItem={renderSocialPost}
-                keyExtractor={(item) => item._id}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.listPadding}
-            />
-        ) : <EmptyState message="You haven't posted anything yet." />}
+            <Text style={styles.sectionHeader}>My Posts</Text>
+            {myPosts.length > 0 ? (
+                <FlatList
+                    data={myPosts}
+                    renderItem={renderSocialPost}
+                    keyExtractor={(item) => item._id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.listPadding}
+                />
+            ) : <EmptyState message="You haven't posted anything yet." />}
+        </View>
       </ScrollView>
 
       <ClubModal
@@ -268,10 +271,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
     paddingTop: 50,
-    paddingBottom: 25,
-    backgroundColor: '#F7F9FC',
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
   },
   backButton: {
     width: 44,
@@ -283,6 +287,9 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontFamily: 'Poppins-Bold',
     color: '#1A202C',
+  },
+  contentArea: {
+    paddingTop: 10,
   },
   centerScreen: {
     flex: 1,
@@ -330,11 +337,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 20,
     marginRight: 16,
-    elevation: 5,
+    elevation: 4,
     shadowColor: '#4A90E2',
-    shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 5 },
-    shadowRadius: 15,
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 10,
     overflow: 'hidden',
   },
   cardImage: {
@@ -359,16 +366,19 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   emptyContainer: {
-    height: 100,
+    height: 150,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 16,
     backgroundColor: '#FFFFFF',
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   emptyText: {
     fontFamily: 'Poppins-SemiBold',
     fontSize: 16,
-    color: '#718096',
+    color: '#A0AEC0',
+    marginTop: 10,
   }
 });

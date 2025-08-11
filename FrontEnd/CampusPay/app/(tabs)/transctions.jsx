@@ -7,8 +7,10 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  ScrollView,
 } from "react-native";
 import { useFonts } from "expo-font";
+import { useFocusEffect } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import colors from "../assets/utils/colors";
@@ -29,33 +31,55 @@ export default function TransactionsScreen() {
   const [status, setStatus] = useState("loading");
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    if (!refreshing) setStatus("loading");
+  const fetchData = useCallback(async (isRefreshing = false) => {
+    if (!isRefreshing) {
+      setStatus("loading");
+    }
     try {
-      const [history, balanceData, currentUserID, currentUserName] = await Promise.all([
-        getTransactionHistory(),
-        getBalance(),
-        AsyncStorage.getItem("userID"),
-        AsyncStorage.getItem("name"),
-      ]);
+      const currentUserID = await AsyncStorage.getItem("userID");
+      const currentUserName = await AsyncStorage.getItem("name");
       setUser({ id: currentUserID, name: currentUserName || "User" });
+
+      // Fetch balance and history separately to handle errors gracefully
+      const balanceData = await getBalance();
       setBalance(balanceData.balance);
+
+      let history = [];
+      try {
+        const historyData = await getTransactionHistory();
+        history = historyData || [];
+      } catch (error) {
+        // A 404 error means no transactions, which is not a failure state.
+        if (error.response && error.response.status === 404) {
+          history = [];
+        } else {
+          // For other errors, we let the main catch block handle it.
+          throw error;
+        }
+      }
+
       setTransactions(history);
       setStatus(history.length > 0 ? "success" : "empty");
+
     } catch (error) {
+      console.error("Failed to fetch transaction data:", error);
       setStatus("error");
     } finally {
-      setRefreshing(false);
+      if (isRefreshing) {
+        setRefreshing(false);
+      }
     }
-  }, [refreshing]);
+  }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchData();
+    fetchData(true);
   };
 
   const renderContent = () => {
@@ -70,16 +94,40 @@ export default function TransactionsScreen() {
     }
     if (status === "error") {
       return (
-        <View style={styles.centeredMessageContainer}>
-          <Text style={styles.messageTitle}>Error loading history</Text>
-        </View>
+        <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={[colors.white]}
+                    tintColor={colors.white}
+                />
+            }
+        >
+            <View style={styles.centeredMessageContainer}>
+                <Text style={styles.messageTitle}>Error loading history</Text>
+            </View>
+        </ScrollView>
       );
     }
     if (status === "empty") {
       return (
-        <View style={styles.centeredMessageContainer}>
-          <Text style={styles.messageTitle}>No Transactions Yet</Text>
-        </View>
+        <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    colors={[colors.white]}
+                    tintColor={colors.white}
+                />
+            }
+        >
+            <View style={styles.centeredMessageContainer}>
+                <Text style={styles.messageTitle}>No Transactions Yet</Text>
+            </View>
+        </ScrollView>
       );
     }
     return (
@@ -105,7 +153,7 @@ export default function TransactionsScreen() {
 
   if (!fontsLoaded) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loaderContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -125,6 +173,12 @@ export default function TransactionsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFFBEB" },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: "#FFFBEB",
+  },
   heading: {
     fontSize: 28,
     fontFamily: "Poppins-Bold",

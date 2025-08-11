@@ -16,6 +16,8 @@ import { useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { joinClub } from "../../services/apiService";
 
+const PIN_STORAGE_KEY = 'userSecurityPIN';
+
 export const CPaymentModal = ({ data, clubID, Close, amount }) => {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
@@ -30,17 +32,24 @@ export const CPaymentModal = ({ data, clubID, Close, amount }) => {
     setIsLoading(true);
 
     try {
-      const storedPin = await AsyncStorage.getItem("userPin");
-      if (pin !== storedPin) {
-        setError("Incorrect PIN. Please try again.");
-        setPin("");
+      const storedPin = await AsyncStorage.getItem(PIN_STORAGE_KEY);
+      
+      if (!storedPin) {
+        Alert.alert(
+          "PIN Not Set",
+          "You need to set a security PIN in your profile before making payments.",
+          [{ text: "OK", onPress: () => {
+            data(); // Close payment modal
+            Close();
+          }}]
+        );
         setIsLoading(false);
         return;
       }
 
-      const token = await AsyncStorage.getItem("authToken");
-      if (!token) {
-        setError("Authentication token not found.");
+      if (pin !== storedPin) {
+        setError("Incorrect PIN. Please try again.");
+        setPin("");
         setIsLoading(false);
         return;
       }
@@ -51,7 +60,8 @@ export const CPaymentModal = ({ data, clubID, Close, amount }) => {
       Close();
     } catch (error) {
       console.error("Join club error:", error);
-      setError("Failed to join club. Please try again.");
+      const errorMessage = error.response?.data?.message || "Failed to join club. Please try again.";
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

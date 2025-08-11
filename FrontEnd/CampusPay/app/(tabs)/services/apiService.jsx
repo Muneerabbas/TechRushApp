@@ -22,6 +22,15 @@ export const getMyProfile = async () => {
     return response.data;
 };
 
+export const updateProfile = async (formData) => {
+    await setAuthToken();
+    const response = await axiosInstance.put('/auth/profile', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+};
+
+
 export const getBalance = async () => {
     await setAuthToken();
     const response = await axiosInstance.get('/auth/balance');

@@ -1,9 +1,116 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, FlatList, ActivityIndicator, Alert, Image } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+    View, 
+    Text, 
+    StyleSheet, 
+    Modal, 
+    TouchableOpacity, 
+    FlatList, 
+    ActivityIndicator, 
+    Alert, 
+    Image,
+    KeyboardAvoidingView,
+    Platform,
+    TextInput
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../assets/utils/colors';
 import { getGroupActivity, settlePayment } from '../(tabs)/services/apiService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const PIN_STORAGE_KEY = 'userSecurityPIN';
+
+// --- Reusable Payment Modal for Settling Bills ---
+const SettlePaymentModal = ({ isVisible, bill, onClose, onSuccess }) => {
+    const [pin, setPin] = useState("");
+    const [error, setError] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+
+    const handleSettlePayment = useCallback(async () => {
+        if (!pin.trim() || pin.length !== 4) {
+            setError("Please enter a valid 4-digit PIN.");
+            return;
+        }
+        setError("");
+        setIsLoading(true);
+
+        try {
+            const storedPin = await AsyncStorage.getItem(PIN_STORAGE_KEY);
+            if (!storedPin) {
+                Alert.alert("PIN Not Set", "Please set up a security PIN in your profile first.");
+                setIsLoading(false);
+                onClose();
+                return;
+            }
+
+            if (pin !== storedPin) {
+                setError("Incorrect PIN. Please try again.");
+                setPin("");
+                setIsLoading(false);
+                return;
+            }
+
+            await settlePayment(bill._id);
+            Alert.alert("Success!", "Your payment has been settled.");
+            onSuccess();
+        } catch (error) {
+            const errorMessage = error.response?.data?.message || "Failed to settle payment.";
+            setError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [bill, pin, onClose, onSuccess]);
+
+    // Reset state when modal is closed
+    useEffect(() => {
+        if (!isVisible) {
+            setPin("");
+            setError("");
+            setIsLoading(false);
+        }
+    }, [isVisible]);
+
+    return (
+        <Modal transparent={true} visible={isVisible} animationType="fade" onRequestClose={onClose}>
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.paymentModalOverlay}>
+                <View style={styles.paymentModalContainer}>
+                    <Image source={require('../assets/images/payment.png')} style={styles.paymentImage} />
+                    <Text style={styles.paymentTitle}>Confirm Settlement</Text>
+                    <Text style={styles.paymentAmountText}>
+                        You are paying <Text style={{ fontFamily: 'Poppins-Bold' }}>₹{bill?.amount?.toFixed(2)}</Text>
+                    </Text>
+                    <Text style={styles.paymentSubtitle}>Enter your 4-digit PIN to confirm</Text>
+
+                    {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+                    <TextInput
+                        style={styles.pinInput}
+                        placeholder="••••"
+                        secureTextEntry={true}
+                        keyboardType="number-pad"
+                        value={pin}
+                        onChangeText={setPin}
+                        maxLength={4}
+                        placeholderTextColor="#bbb"
+                    />
+                    
+                    <TouchableOpacity
+                        style={[styles.payButton, (isLoading || pin.length !== 4) && styles.payButtonDisabled]}
+                        onPress={handleSettlePayment}
+                        disabled={isLoading || pin.length !== 4}
+                    >
+                        {isLoading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.payText}>Settle Payment</Text>}
+                    </TouchableOpacity>
+            
+                    <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
+                        <Text style={styles.cancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                </View>
+            </KeyboardAvoidingView>
+        </Modal>
+    );
+};
+
 
 const BillItem = ({ bill, onSettle, currentUserID }) => {
     const paidCount = bill.splits.filter(s => s.paid).length;
@@ -37,7 +144,7 @@ const BillItem = ({ bill, onSettle, currentUserID }) => {
                             <Text style={styles.paidText}>Paid</Text>
                         </View>
                     ) : (
-                        <TouchableOpacity style={styles.settleButton} onPress={() => onSettle(bill._id)}>
+                        <TouchableOpacity style={styles.settleButton} onPress={() => onSettle(bill)}>
                             <Text style={styles.settleButtonText}>Settle Now</Text>
                         </TouchableOpacity>
                     )}
@@ -51,6 +158,8 @@ export const GroupDetailModal = ({ isVisible, group, onClose }) => {
     const [activity, setActivity] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [currentUserID, setCurrentUserID] = useState(null);
+    const [isPaymentModalVisible, setPaymentModalVisible] = useState(false);
+    const [selectedBill, setSelectedBill] = useState(null);
 
     const fetchActivityAndUser = async () => {
         if (group) {
@@ -61,6 +170,7 @@ export const GroupDetailModal = ({ isVisible, group, onClose }) => {
                 const data = await getGroupActivity(group._id);
                 setActivity(data);
             } catch (error) {
+                Alert.alert("Error", "Could not fetch group activity.");
             } finally {
                 setIsLoading(false);
             }
@@ -73,12 +183,16 @@ export const GroupDetailModal = ({ isVisible, group, onClose }) => {
         }
     }, [group, isVisible]);
 
-    const handleSettle = async (billId) => {
-        try {
-            await settlePayment(billId);
-            fetchActivityAndUser();
-        } catch (error) {
-        }
+    const handleSettlePress = (bill) => {
+        const userSplit = bill.splits.find(s => s.user._id === currentUserID);
+        setSelectedBill({ _id: bill._id, amount: userSplit.amount });
+        setPaymentModalVisible(true);
+    };
+
+    const handleSuccessfulSettlement = () => {
+        setPaymentModalVisible(false);
+        setSelectedBill(null);
+        fetchActivityAndUser(); 
     };
 
     return (
@@ -98,7 +212,7 @@ export const GroupDetailModal = ({ isVisible, group, onClose }) => {
                     ) : (
                         <FlatList
                             data={activity?.bills}
-                            renderItem={({ item }) => <BillItem bill={item} onSettle={handleSettle} currentUserID={currentUserID} />}
+                            renderItem={({ item }) => <BillItem bill={item} onSettle={handleSettlePress} currentUserID={currentUserID} />}
                             keyExtractor={(item) => item._id}
                             ListEmptyComponent={<Text style={styles.noBillsText}>No bills in this group yet.</Text>}
                             showsVerticalScrollIndicator={false}
@@ -106,6 +220,14 @@ export const GroupDetailModal = ({ isVisible, group, onClose }) => {
                     )}
                 </View>
             </View>
+            {selectedBill && (
+                <SettlePaymentModal 
+                    isVisible={isPaymentModalVisible}
+                    bill={selectedBill}
+                    onClose={() => setPaymentModalVisible(false)}
+                    onSuccess={handleSuccessfulSettlement}
+                />
+            )}
         </Modal>
     );
 };
@@ -242,5 +364,97 @@ const styles = StyleSheet.create({
         fontFamily: 'Poppins-Regular', 
         color: '#999', 
         marginTop: 50 
+    },
+    // Payment Modal Styles
+    paymentModalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0,0,0,0.6)",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    paymentModalContainer: {
+        width: "90%",
+        maxWidth: 400,
+        padding: 25,
+        backgroundColor: colors.white,
+        borderRadius: 20,
+        alignItems: "center",
+        elevation: 10,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
+    },
+    paymentImage: {
+        width: 100,
+        height: 100,
+        marginBottom: 15,
+    },
+    paymentTitle: {
+        fontSize: 22,
+        fontFamily: "Poppins-Bold",
+        color: "#333",
+        textAlign: "center",
+    },
+    paymentAmountText: {
+        fontSize: 18,
+        fontFamily: 'Poppins-Regular',
+        color: '#444',
+        marginTop: 5,
+        marginBottom: 10,
+    },
+    paymentSubtitle: {
+        fontSize: 14,
+        fontFamily: 'Poppins-Regular',
+        color: '#666',
+        marginBottom: 20,
+    },
+    errorText: {
+        color: "red",
+        fontFamily: "Poppins-Regular",
+        fontSize: 14,
+        marginBottom: 15,
+        textAlign: "center",
+    },
+    pinInput: {
+        fontSize: 28,
+        fontFamily: "Poppins-Bold",
+        textAlign: "center",
+        letterSpacing: 20,
+        width: "80%",
+        backgroundColor: "#f5f5f5",
+        borderRadius: 12,
+        paddingVertical: 12,
+        marginBottom: 25,
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    payButton: {
+        backgroundColor: colors.primary,
+        borderRadius: 15,
+        paddingVertical: 15,
+        width: "100%",
+        alignItems: "center",
+        shadowColor: colors.primary,
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
+    },
+    payButtonDisabled: {
+        backgroundColor: "#a0c4ff",
+        shadowOpacity: 0,
+    },
+    payText: {
+        color: colors.white,
+        fontFamily: "Poppins-SemiBold",
+        fontSize: 16,
+    },
+    cancelButton: {
+        marginTop: 15,
+    },
+    cancelText: {
+        color: "#777",
+        fontFamily: "Poppins-Regular",
+        fontSize: 14,
     },
 });

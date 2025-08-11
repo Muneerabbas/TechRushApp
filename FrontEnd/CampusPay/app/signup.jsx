@@ -276,7 +276,7 @@ export default function Signup({ navigation }) {
 
         <View style={{ flexDirection: 'row', gap: 5, justifyContent: 'center' }}>
           <Text style={styles.noaccountText}>Admin/Teacher?</Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Admin')}>
+          <TouchableOpacity onPress={() => router.navigate('/admin')}>
             <Text style={styles.signuptext}>SignUp Here</Text>
           </TouchableOpacity>
         </View>

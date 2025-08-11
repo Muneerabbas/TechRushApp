@@ -9,6 +9,7 @@ import {
   Platform,
   Image,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 
 import colors from "../assets/utils/colors";
@@ -18,29 +19,38 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import paymentImage from "../assets/images/payment.png";
 
+const PIN_STORAGE_KEY = 'userSecurityPIN'; 
+
 export default function PaymentModal({ data, Payto, receiverid }) {
   const [amount, setAmount] = useState("");
   const [pin, setPin] = useState("");
   const [showPinInput, setShowPinInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handlePay = () => {
-    if (amount.trim()) setShowPinInput(true);
+  const handlePay = async () => {
+    const storedPin = await AsyncStorage.getItem(PIN_STORAGE_KEY);
+    if (!storedPin) {
+        Alert.alert("PIN Not Set", "Please set up your security PIN from your profile before making payments.");
+        return;
+    }
+    if (amount.trim()) {
+        setShowPinInput(true);
+    }
   };
 
   const handlePinVerify = async () => {
-    if (!pin.trim()) {
-      alert("Please enter your PIN.");
+    if (pin.length !== 4) {
+      Alert.alert("Invalid PIN", "Please enter your 4-digit PIN.");
       return;
     }
     setIsLoading(true);
     try {
-      const storedPin = await AsyncStorage.getItem("userPin");
+      const storedPin = await AsyncStorage.getItem(PIN_STORAGE_KEY);
       if (pin === storedPin) {
         const token = await AsyncStorage.getItem("authToken");
-        const payload = { receiverId: receiverid, amount: Number(amount) };
+        const payload = { receiverId: receiverid, amount: Number(amount), description: `Payment to ${Payto}` };
         await axios.post(
-          `transactions/send`,
+          `https://techrush-backend.onrender.com/api/transactions/send`,
           payload,
           {
             headers: {
@@ -49,16 +59,18 @@ export default function PaymentModal({ data, Payto, receiverid }) {
             },
           }
         );
-        alert("Payment successful!");
-        data();
+        Alert.alert("Success!", "Payment sent successfully!");
+        data(); // Close modal on success
       } else {
-        alert("Incorrect PIN. Please try again.");
+        Alert.alert("Incorrect PIN", "The PIN you entered is incorrect. Please try again.");
         setPin("");
       }
-    } catch {
-      alert("Payment failed. Please try again.");
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || "Payment failed. Please try again.";
+      Alert.alert("Payment Failed", errorMessage);
+    } finally {
+        setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleCancel = () => {
@@ -83,7 +95,7 @@ export default function PaymentModal({ data, Payto, receiverid }) {
           )}
 
           <Text style={styles.title}>
-            {showPinInput ? "Enter PIN" : `Paying: ${Payto}`}
+            {showPinInput ? "Enter PIN to Confirm" : `Paying: ${Payto}`}
           </Text>
 
           {!showPinInput ? (
@@ -136,13 +148,13 @@ export default function PaymentModal({ data, Payto, receiverid }) {
             <TouchableOpacity
               style={[
                 styles.payButton,
-                (!pin.trim() || isLoading) && styles.payButtonDisabled,
+                (pin.length !== 4 || isLoading) && styles.payButtonDisabled,
               ]}
               onPress={handlePinVerify}
-              disabled={!pin.trim() || isLoading}
+              disabled={pin.length !== 4 || isLoading}
               activeOpacity={0.8}
             >
-              <Text style={styles.payText}>Verify PIN</Text>
+              <Text style={styles.payText}>Verify & Pay</Text>
             </TouchableOpacity>
           ) : null}
 
@@ -260,16 +272,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   loaderContainer: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
     width: "100%",
     paddingVertical: 14,
+    marginBottom: 28
   },
   processingText: {
     fontSize: 16,
     color: colors.primary,
     fontFamily: "Poppins-SemiBold",
+    marginTop: 12,
   },
 });
