@@ -3,15 +3,17 @@ import React from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../../../assets/utils/colors';
-import { useRouter } from 'expo-router';
+import { useRouter, Link} from 'expo-router';
+import { useCameraPermissions } from "expo-camera";
 
 export const QuickActions = ({ splitAmount, setSplitAmount }) => {
   const router = useRouter();
   return (
     <>
+    
       <TouchableOpacity
         style={styles.scanButton}
-        onPress={() => console.log("Scan Pressed")}
+        onPress={() => {console.log("Scan Pressed"), router.push('/src/screens/Scanner')}}
       >
         <Ionicons name="qr-code-outline" size={35} color={colors.white} />
         <Text style={styles.scanButtonText}>Scan to Pay</Text>
@@ -32,7 +34,7 @@ export const QuickActions = ({ splitAmount, setSplitAmount }) => {
             onPress={() =>
               router.push({
                 pathname: "/src/screens/Split",
-                params: { prevamount: splitAmount }, // sending splitAmount
+                params: { prevamount: splitAmount },
               })
             }
             disabled={!splitAmount.trim()}
