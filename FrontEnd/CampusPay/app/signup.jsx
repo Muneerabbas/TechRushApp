@@ -148,7 +148,7 @@ export default function Signup({ navigation }) {
       <Text style={styles.heading}>Campus Pay!</Text>
 
       <View style={styles.main}>
-        <TouchableOpacity onPress={pickImage} style={{ alignSelf: 'center' }}>
+        <TouchableOpacity onPress={pickImage} style={{ alignSelf: 'center', top:-20, }}>
           <View
             style={{
               backgroundColor: colors.white,

@@ -71,7 +71,11 @@ export default function PostForm() {
   };
 
   const handleSubmit = async () => {
-    if (!category || (category !== "Social" && !title.trim()) || !description.trim()) {
+    if (
+      !category ||
+      (category !== "Social" && !title.trim()) ||
+      !description.trim()
+    ) {
       Alert.alert("Error", "Please fill all required fields.");
       return;
     }
@@ -111,7 +115,6 @@ export default function PostForm() {
       }
       router.back();
     } catch (error) {
-      // apiService already shows an alert
     } finally {
       setIsLoading(false);
     }
@@ -141,16 +144,19 @@ export default function PostForm() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={28} color="#333" />
           </TouchableOpacity>
           <Text style={styles.heading}>
-            {userRole === 'Admin' ? 'Create New Post' : 'Share an Update'}
+            {userRole === "Admin" ? "Create New Post" : "Share an Update"}
           </Text>
         </View>
 
-        {userRole === 'Admin' ? renderAdminOptions() : null}
-        
+        {userRole === "Admin" ? renderAdminOptions() : null}
+
         {category && (
           <View style={styles.formContainer}>
             {category !== "Social" && (
@@ -262,11 +268,11 @@ export default function PostForm() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F7F9FC" },
+  safeArea: { flex: 1, backgroundColor: "#F7F9FC", paddingVertical:30, },
   container: { flex: 1, paddingHorizontal: 20 },
-  header: { 
-    flexDirection: "row", 
-    alignItems: "center", 
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
   },
   backButton: {
@@ -279,7 +285,7 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
   formContainer: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 20,
     padding: 20,
     marginTop: 10,
@@ -303,7 +309,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: "Poppins-Regular",
     borderWidth: 1,
-    borderColor: '#e0e6ed',
+    borderColor: "#e0e6ed",
   },
   textArea: { height: 120, textAlignVertical: "top" },
   row: { flexDirection: "row", flexWrap: "wrap", gap: 10 },

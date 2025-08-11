@@ -17,7 +17,7 @@ export default function Index() {
     }
 
     checkLogin();
-  }, []);
+  });
 
   if (isLoading) {
     return (

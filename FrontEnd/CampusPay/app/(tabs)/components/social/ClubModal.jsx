@@ -17,6 +17,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export const ClubModal = ({ visible, item, onClose, onJoinSuccess }) => {
   if (!item) return null;
+  const API_URL = 'https://techrush-backend.onrender.com';
 
   const [isJoinModalVisible, setIsJoinModalVisible] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
@@ -31,7 +32,6 @@ export const ClubModal = ({ visible, item, onClose, onJoinSuccess }) => {
       try {
         const userId = await AsyncStorage.getItem("userID");
         if (userId && item.members && Array.isArray(item.members)) {
-          // FIX: Check against the members array from the item prop directly
           const joined = item.members.some(member => {
             const memberId = typeof member.user === 'object' && member.user !== null ? member.user._id : member.user;
             return memberId === userId;
@@ -115,7 +115,7 @@ export const ClubModal = ({ visible, item, onClose, onJoinSuccess }) => {
             <FallbackImage
               uri={
                 item.coverImage
-                  ? `https://techrush-backend.onrender.com${item.coverImage}`
+                  ? `${API_URL}${item.coverImage}`
                   : null
               }
               style={styles.modalImage}

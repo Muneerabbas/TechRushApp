@@ -13,6 +13,7 @@ import colors from "../../../assets/utils/colors";
 
 export const SocialModal = ({ visible, item, onClose }) => {
   if (!item) return null;
+  const API_URL = 'https://techrush-backend.onrender.com';
 
   function handleUpvote() {
     Alert.alert("Upvoted!", "Thanks for your feedback.");
@@ -50,14 +51,14 @@ export const SocialModal = ({ visible, item, onClose }) => {
           <FallbackImage
             uri={
               item.image
-                ? `https://techrush-backend.onrender.com${item.image}`
+                ? `${API_URL}${item.image}`
                 : null
             }
             style={styles.modalImage}
           />
           <View style={styles.authorContainer}>
             <Image 
-              source={ item.author?.profilePicture ? { uri: `https://techrush-backend.onrender.com${item.author.profilePicture}` } : require('../../../assets/images/student.png')} 
+              source={ item.author?.profilePicture ? { uri: `${API_URL}${item.author.profilePicture}` } : require('../../../assets/images/student.png')} 
               style={styles.authorImage} 
             />
             <Text style={styles.authorName}>{item.author?.name || 'Campus User'}</Text>
@@ -143,7 +144,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.primary,
+    backgroundColor:'red',
     flexDirection: 'row',
     gap: 8,
     shadowColor: colors.primary,
