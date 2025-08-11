@@ -1,13 +1,10 @@
-// controllers/groupController.js
 const mongoose = require('mongoose');
 const Group = require('../models/Group');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
-const Message = require('../models/Message');
 const Bill = require('../models/Bill');
 const Transaction = require('../models/Transaction');
 const logger = require('../utils/logger');
-const fs = require('fs').promises;
 
 exports.createGroup = async (req, res, next) => {
   try {
@@ -31,8 +28,35 @@ exports.createGroup = async (req, res, next) => {
       description,
     });
     await group.save();
+
+    const notifications = participantIds
+      .filter(id => !id.equals(creatorId))
+      .map(userId => ({
+        user: userId,
+        message: `You've been added to a new group: "${name}" by ${req.user.name}.`,
+        type: 'Group',
+        relatedId: group._id,
+      }));
+
+    if (notifications.length > 0) {
+      await Notification.insertMany(notifications);
+    }
+
     logger.info(`Group "${name}" created by ${req.user.email}`);
     res.status(201).json({ message: 'Group created successfully', group });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getMyGroups = async (req, res, next) => {
+  try {
+    const userId = req.user._id;
+    const groups = await Group.find({ 'participants.user': userId })
+      .populate('participants.user', 'name profilePicture')
+      .sort({ createdAt: -1 })
+      .limit(10);
+    res.status(200).json(groups);
   } catch (error) {
     next(error);
   }
@@ -49,6 +73,35 @@ exports.getGroupDetails = async (req, res, next) => {
       }
 };
 
+exports.getGroupActivity = async (req, res, next) => {
+    try {
+        const { groupId } = req.params;
+        const group = await Group.findById(groupId).populate('participants.user', 'name profilePicture');
+        if (!group) {
+            return res.status(404).json({ message: 'Group not found.' });
+        }
+        const isParticipant = group.participants.some(p => p.user.equals(req.user._id));
+        if (!isParticipant) {
+            return res.status(403).json({ message: 'Only group members can view activity.' });
+        }
+        
+        const bills = await Bill.find({ group: groupId }).populate('creator splits.user', 'name profilePicture').lean();
+        
+        const processedBills = bills.map(bill => {
+            const paidCount = bill.splits.filter(s => s.paid).length;
+            const totalCount = bill.splits.length;
+            return {
+                ...bill,
+                paymentStatus: `${paidCount}/${totalCount} Paid`
+            };
+        });
+
+        res.status(200).json({ group, bills: processedBills });
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.splitBill = async (req, res, next) => {
   if (!req.body || Object.keys(req.body).length === 0) {
     return res.status(400).json({
@@ -61,22 +114,19 @@ exports.splitBill = async (req, res, next) => {
   if (!totalAmount || totalAmount <= 0 || !description) {
     return res.status(400).json({ message: 'Description and a positive total amount are required.' });
   }
-  const isProduction = process.env.NODE_ENV === 'production';
-  const session = isProduction ? await mongoose.startSession() : null;
+  const session = await mongoose.startSession();
   try {
-    if (session) {
-      session.startTransaction();
-    }
+    session.startTransaction();
     const group = await Group.findById(groupId).session(session);
     if (!group) {
-      if (session) await session.abortTransaction();
+      await session.abortTransaction();
       return res.status(404).json({ message: 'Group not found' });
     }
     const billSplits = [];
     if (splits && splits.length > 0) {
       const customSplitTotal = splits.reduce((sum, split) => sum + split.amount, 0);
       if (Math.abs(customSplitTotal - totalAmount) > 0.01) {
-        if (session) await session.abortTransaction();
+        await session.abortTransaction();
         return res.status(400).json({ message: 'The sum of custom splits must equal the total amount.' });
       }
       splits.forEach(split => {
@@ -85,7 +135,7 @@ exports.splitBill = async (req, res, next) => {
     } else {
       const participantCount = group.participants.length;
       if (participantCount === 0) {
-        if (session) await session.abortTransaction();
+        await session.abortTransaction();
         return res.status(400).json({ message: 'No participants to split the bill with.' });
       }
       const amountPerPerson = totalAmount / participantCount;
@@ -112,52 +162,58 @@ exports.splitBill = async (req, res, next) => {
     if(notifications.length > 0) {
         await Notification.insertMany(notifications, { session });
     }
-    if (session) {
-      await session.commitTransaction();
-    }
+    await session.commitTransaction();
     logger.info(`New bill "${description}" created in group "${group.name}"`);
     res.status(201).json({ message: 'Bill created and split successfully', bill });
   } catch (error) {
-    if (session) {
-      await session.abortTransaction();
-    }
+    await session.abortTransaction();
     next(error);
   } finally {
-    if (session) {
-      session.endSession();
-    }
+    session.endSession();
   }
 };
 
 exports.settlePayment = async (req, res, next) => {
     const { billId } = req.params;
     const userId = req.user._id;
-    const isProduction = process.env.NODE_ENV === 'production';
-    const session = isProduction ? await mongoose.startSession() : null;
+    const session = await mongoose.startSession();
     try {
-        if (session) {
-          session.startTransaction();
-        }
+        session.startTransaction();
         const bill = await Bill.findById(billId)
-            .populate('creator', 'name')
             .populate('group', 'name')
             .session(session);
+
         if (!bill) {
-            if (session) await session.abortTransaction();
+            await session.abortTransaction();
             return res.status(404).json({ message: 'Bill not found' });
         }
         const split = bill.splits.find(s => s.user.equals(userId));
         if (!split) {
-            if (session) await session.abortTransaction();
+            await session.abortTransaction();
             return res.status(403).json({ message: 'You are not part of this bill split.' });
         }
         if (split.paid) {
-            if (session) await session.abortTransaction();
+            await session.abortTransaction();
             return res.status(400).json({ message: 'You have already settled this payment.' });
         }
+
+        const payer = await User.findById(userId).session(session);
+        const receiver = await User.findById(bill.creator).session(session);
+
+        if (payer.balance < split.amount) {
+            await session.abortTransaction();
+            return res.status(400).json({ message: 'Insufficient balance.' });
+        }
+
+        payer.balance -= split.amount;
+        receiver.balance += split.amount;
+
+        await payer.save({ session });
+        await receiver.save({ session });
+
         const newTransaction = new Transaction({
             sender: userId,
-            receiver: bill.creator._id,
+            receiver: bill.creator,
             amount: split.amount,
             description: `Settled bill: "${bill.description}" in group "${bill.group.name}"`,
             status: 'Completed'
@@ -165,98 +221,22 @@ exports.settlePayment = async (req, res, next) => {
         await newTransaction.save({ session });
         split.paid = true;
         await bill.save({ session });
-        if (!bill.creator._id.equals(userId)) {
+        if (!bill.creator.equals(userId)) {
             const notification = new Notification({
-                user: bill.creator._id,
+                user: bill.creator,
                 message: `${req.user.name} paid their share of ₹${split.amount.toFixed(2)} for "${bill.description}".`,
                 type: 'PaymentSettled',
                 relatedId: bill._id,
             });
             await notification.save({ session });
         }
-        if (session) {
-          await session.commitTransaction();
-        }
+        await session.commitTransaction();
         logger.info(`${req.user.name} settled payment for bill "${bill.description}"`);
         res.json({ message: 'Your payment has been successfully settled.', bill });
     } catch (error) {
-        if (session) {
-          await session.abortTransaction();
-        }
+        await session.abortTransaction();
         next(error);
     } finally {
-        if (session) {
-          session.endSession();
-        }
+        session.endSession();
     }
-};
-
-exports.getGroupActivity = async (req, res, next) => {
-    try {
-        const { groupId } = req.params;
-        const group = await Group.findById(groupId);
-        if (!group) {
-            return res.status(404).json({ message: 'Group not found.' });
-        }
-        const isParticipant = group.participants.some(p => p.user.equals(req.user._id));
-        if (!isParticipant) {
-            return res.status(403).json({ message: 'Only group members can view activity.' });
-        }
-        const [messages, bills] = await Promise.all([
-            Message.find({ group: groupId }).populate('sender', 'name profilePicture').lean(),
-            Bill.find({ group: groupId }).populate('creator splits.user', 'name profilePicture').lean()
-        ]);
-        const processedBills = bills.map(bill => {
-            const paidCount = bill.splits.filter(s => s.paid).length;
-            const totalCount = bill.splits.length;
-            return {
-                ...bill,
-                paymentStatus: `${paidCount}/${totalCount} Paid`
-            };
-        });
-        const activity = [...messages, ...processedBills].sort((a, b) => a.createdAt - b.createdAt);
-        res.status(200).json(activity);
-    } catch (error) {
-        next(error);
-    }
-};
-
-exports.sendGroupMessage = async (req, res, next) => {
-    try {
-        const { groupId } = req.params;
-        const { content } = req.body;
-        const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
-
-        if (!content && !imagePath) {
-          return res.status(400).json({ message: 'Message must include text or an image.' });
-        }
-
-        const group = await Group.findById(groupId);
-        if (!group) {
-          if (req.file) await fs.unlink(req.file.path);
-          return res.status(404).json({ message: 'Group not found.' });
-        }
-
-        const isParticipant = group.participants.some(p => p.user.equals(req.user._id));
-        if (!isParticipant) {
-          if (req.file) await fs.unlink(req.file.path);
-          return res.status(403).json({ message: 'Only group members can send messages.' });
-        }
-
-        const message = new Message({
-          group: groupId,
-          sender: req.user._id,
-          content: content || '',
-          image: imagePath,
-        });
-
-        await message.save();
-
-        res.status(201).json({ message: 'Message sent successfully', message });
-      } catch (error) {
-        if (req.file) {
-          await fs.unlink(req.file.path).catch(err => console.error("Error deleting orphaned file:", err));
-        }
-        next(error);
-      }
 };

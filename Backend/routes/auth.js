@@ -1,13 +1,9 @@
-// routes/auth.js
-
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const auth = require('../middleware/auth');
 const authController = require('../controllers/authController');
-
-// --- Multer Configuration for File Uploads ---
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -29,9 +25,10 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({ storage: storage, fileFilter: fileFilter });
 
 router.post('/register', upload.single('profilePicture'), authController.register);
-router.post('/login', authController.login);
+router.post('/login', upload.none(), authController.login);
 
 router.get('/me', auth, authController.getProfile);
+router.get('/balance', auth, authController.getBalance);
 router.put('/profile', auth, upload.single('profilePicture'), authController.updateProfile);
 router.get('/users/:id', auth, authController.getUserProfile);
 router.post('/bank-details', auth, authController.addBankDetails);

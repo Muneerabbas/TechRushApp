@@ -1,5 +1,3 @@
-// controllers/authController.js
-
 const User = require('../models/User');
 const BankDetails = require('../models/BankDetails');
 const bcrypt = require('bcryptjs');
@@ -7,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs').promises;
 const path = require('path');
 
-//User Registeration
 exports.register = async (req, res, next) => {
   try {
     const { name, email, password, role, description } = req.body;
@@ -41,7 +38,7 @@ exports.register = async (req, res, next) => {
     
     user.password = undefined;
 
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '4d' });
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET);
 
     res.status(201).json({ token, user });
   } catch (error) {
@@ -78,7 +75,6 @@ exports.updateProfile = async (req, res, next) => {
     next(error);
   }
 };
-
 
 exports.login = async (req, res, next) => {
   try {
@@ -117,6 +113,17 @@ exports.getUserProfile = async (req, res, next) => {
   }
 };
 
+exports.getBalance = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user.id).select('balance');
+        if (!user) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+        res.status(200).json({ balance: user.balance });
+    } catch (error) {
+        next(error);
+    }
+};
 
 exports.addBankDetails = async (req, res, next) => {
     try {
@@ -146,7 +153,6 @@ exports.addBankDetails = async (req, res, next) => {
         next(error);
     }
 };
-
 
 exports.getBankDetails = async (req, res, next) => {
     try {

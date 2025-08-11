@@ -1,4 +1,3 @@
-// models/Club.js
 const mongoose = require('mongoose');
 
 const clubSchema = new mongoose.Schema({
@@ -33,24 +32,16 @@ const clubSchema = new mongoose.Schema({
     },
     _id: false,
   }],
-  pendingRequests: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-  }],
-  membershipType: {
+  eventType: {
     type: String,
-    enum: ['Free', 'Subscription'],
+    enum: ['Free', 'Paid'],
     default: 'Free',
+    required: true,
   },
-  subscriptionFee: {
+  ticketPrice: {
     type: Number,
     default: 0,
     min: 0,
-  },
-  subscriptionFrequency: {
-    type: String,
-    enum: [null, 'Monthly', 'Quarterly', 'Annually'],
-    default: null,
   },
   coverImage: {
     type: String,
