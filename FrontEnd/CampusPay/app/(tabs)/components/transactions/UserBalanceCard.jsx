@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
   userName: {
     fontFamily: "Poppins-Bold",
     fontSize: 22,
+    flexWrap:"wrap",
     color: colors.text,
   },
   cardTypeContainer: {
