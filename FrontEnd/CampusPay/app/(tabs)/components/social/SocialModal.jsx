@@ -58,7 +58,7 @@ export const SocialModal = ({ visible, item, onClose }) => {
           />
           <View style={styles.authorContainer}>
             <Image 
-              source={ item.author?.profilePicture ? { uri: `${API_URL}${item.author.profilePicture}` } : require('../../../assets/images/student.png')} 
+              source={ item.author?.profilePicture ? { uri: `${API_URL}${item.author.profilePicture}` } : require('../../../assets/images/studentProfile.png')} 
               style={styles.authorImage} 
             />
             <Text style={styles.authorName}>{item.author?.name || 'Campus User'}</Text>
