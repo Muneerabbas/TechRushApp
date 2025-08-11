@@ -44,7 +44,7 @@ export const TransactionCard = memo(({ item, currentUserID }) => {
       </View>
       <View style={styles.amountContainer}>
         <Text style={[styles.transactionAmount, amountColor]}>
-          {`${isCredit ? "+" : "-"}₹${item.amount}`}
+        {`${isCredit ? "+" : "-"}₹${Number(item.amount).toFixed(2)}`}
         </Text>
       </View>
     </View>
