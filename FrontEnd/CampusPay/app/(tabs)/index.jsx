@@ -25,17 +25,6 @@ import { QuickActions } from "./components/home/QuickActions";
 import { RecentGroups } from "../components/RecentGroups";
 import { scanIdCard } from "../services/idCardScanner";
 
-const LoadingModal = ({ visible }) => (
-  <Modal transparent={true} animationType="fade" visible={visible}>
-    <View style={styles.loadingOverlay}>
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    </View>
-  </Modal>
-);
-
 export default function HomeScreen() {
   const [fontsLoaded] = useFonts({
     "Poppins-Bold": require("../assets/fonts/Poppins-Bold.ttf"),
@@ -169,7 +158,11 @@ export default function HomeScreen() {
   });
 
   if (!fontsLoaded) {
-    return <LoadingModal visible={true} />;
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
   }
 
   return (
@@ -177,7 +170,6 @@ export default function HomeScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <LoadingModal visible={!fontsLoaded} />
       <Header name={name} role={role} onReload={loadInitialData} />
       <View style={styles.mainContentArea}>
         <Animated.ScrollView
@@ -266,26 +258,6 @@ const styles = StyleSheet.create({
     marginTop: -20,
   },
   contentContainer: { paddingVertical: 25 },
-  loadingOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  loadingContainer: {
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 15,
-  },
-  loadingText: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 16,
-    color: '#333',
-  },
   payUserContainer: {
     backgroundColor: 'white',
     borderRadius: 20,
