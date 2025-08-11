@@ -45,10 +45,8 @@ export default function Login() {
       const mail = res.data.user.email;
       const role = res.data.user.role;
       
-      // Assuming the API response might include a PIN, or it's a hardcoded value for now.
-      // In a real app, you would get this from the user during signup or a separate screen.
-      const userPin = '1234'; // A placeholder PIN for demonstration
-
+     
+      const userPin = '1234'; 
       if (token) {
         await AsyncStorage.setItem('authToken', token);
         await AsyncStorage.setItem('userID', userID);

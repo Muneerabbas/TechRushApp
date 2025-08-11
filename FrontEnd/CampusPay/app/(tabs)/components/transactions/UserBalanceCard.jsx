@@ -1,34 +1,71 @@
-// app/(tabs)/components/transactions/UserBalanceCard.jsx
-import React, { memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import colors from '../../../assets/utils/colors';
+import React, { memo } from "react";
+import { View, Text, StyleSheet } from "react-native";
+import colors from "../../../assets/utils/colors";
+import { Ionicons } from "@expo/vector-icons";
 
 export const UserBalanceCard = memo(({ name, balance }) => (
   <View style={styles.userCard}>
     <View style={styles.cardHeader}>
       <Text style={styles.userName}>{name}</Text>
-      <Text style={styles.cardType}>Campus Card</Text>
+      <View style={styles.cardTypeContainer}>
+        <Ionicons name="card" size={16} color={colors.textSecondary} style={{ marginRight: 6 }} />
+        <Text style={styles.cardType}>Campus Card</Text>
+      </View>
     </View>
     <View>
       <Text style={styles.balanceLabel}>Total Balance</Text>
-      <Text style={styles.balanceAmount}>{`₹ ${balance.toLocaleString('en-IN')}`}</Text>
+      <Text style={styles.balanceAmount}>{`₹ ${balance.toLocaleString("en-IN")}`}</Text>
     </View>
   </View>
 ));
-UserBalanceCard.displayName = 'UserBalanceCard';
+UserBalanceCard.displayName = "UserBalanceCard";
 
 const styles = StyleSheet.create({
   userCard: {
-    backgroundColor: colors.secondary, marginHorizontal: 20, borderRadius: 20,
-    padding: 25, elevation: 10, shadowColor: '#000', shadowOpacity: 0.2,
-    shadowRadius: 20, shadowOffset: { width: 0, height: 12 }, zIndex: 10,
+    backgroundColor: colors.secondary,
+    marginHorizontal: 20,
+    borderRadius: 24,
+    padding: 28,
+    elevation: 14,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 16 },
+    borderWidth: 1,
+    borderColor: "#A7C4A0", // subtle green border tint
+    zIndex: 10,
   },
   cardHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 25,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 28,
   },
-  userName: { fontFamily: 'Poppins-Bold', fontSize: 20, color: colors.text },
-  cardType: { fontFamily: 'Poppins-Regular', fontSize: 14, color: 'rgba(51, 51, 51, 0.7)' },
-  balanceLabel: { fontFamily: 'Poppins-Regular', fontSize: 14, color: 'rgba(51, 51, 51, 0.7)' },
-  balanceAmount: { fontFamily: 'Poppins-Bold', fontSize: 34, color: colors.text, marginTop: 5, letterSpacing: 1 },
+  userName: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 22,
+    color: colors.text,
+  },
+  cardTypeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  cardType: {
+    fontFamily: "Poppins-SemiBold",
+    fontSize: 14,
+    color: colors.textSecondary,
+    letterSpacing: 0.5,
+  },
+  balanceLabel: {
+    fontFamily: "Poppins-Regular",
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: 6,
+  },
+  balanceAmount: {
+    fontFamily: "Poppins-Bold",
+    fontSize: 36,
+    color: colors.text,
+    letterSpacing: 1,
+  },
 });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,11 +10,11 @@ import {
   Alert,
   ActivityIndicator,
   SafeAreaView,
-  Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import colors from "../../assets/utils/colors";
 import {
@@ -23,7 +23,6 @@ import {
   shareActivity,
 } from "../../(tabs)/services/apiService";
 
-// Reusable Button Component
 const SelectionButton = ({ label, isSelected, onPress }) => (
   <TouchableOpacity
     style={[styles.button, isSelected && styles.buttonSelected]}
@@ -38,15 +37,26 @@ const SelectionButton = ({ label, isSelected, onPress }) => (
 export default function PostForm() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [userRole, setUserRole] = useState(null);
   const [category, setCategory] = useState(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState(null);
   const [membershipType, setMembershipType] = useState("Free");
   const [price, setPrice] = useState("");
-
   const [location, setLocation] = useState("");
   const [capacity, setCapacity] = useState("");
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      const role = await AsyncStorage.getItem("role");
+      setUserRole(role);
+      if (role !== "Admin") {
+        setCategory("Social");
+      }
+    };
+    fetchUserRole();
+  }, []);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -61,8 +71,8 @@ export default function PostForm() {
   };
 
   const handleSubmit = async () => {
-    if (!category || !title.trim() || !description.trim()) {
-      Alert.alert("Error", "Please fill in title, description, and category.");
+    if (!category || (category !== "Social" && !title.trim()) || !description.trim()) {
+      Alert.alert("Error", "Please fill all required fields.");
       return;
     }
     if (category === "Events" && !capacity.trim()) {
@@ -99,14 +109,29 @@ export default function PostForm() {
         formData.append("content", description);
         await shareActivity(formData);
       }
-
       router.back();
     } catch (error) {
-      // The apiService file already shows an alert.
+      // apiService already shows an alert
     } finally {
       setIsLoading(false);
     }
   };
+
+  const renderAdminOptions = () => (
+    <>
+      <Text style={styles.label}>What are you creating?*</Text>
+      <View style={styles.row}>
+        {["Clubs", "Events", "Social"].map((item) => (
+          <SelectionButton
+            key={item}
+            label={item}
+            isSelected={category === item}
+            onPress={() => setCategory(item)}
+          />
+        ))}
+      </View>
+    </>
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -116,38 +141,34 @@ export default function PostForm() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={28} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.heading}>Create New Post</Text>
+          <Text style={styles.heading}>
+            {userRole === 'Admin' ? 'Create New Post' : 'Share an Update'}
+          </Text>
         </View>
 
-        <Text style={styles.label}>What are you creating?*</Text>
-        <View style={styles.row}>
-          {["Clubs", "Events", "Social"].map((item) => (
-            <SelectionButton
-              key={item}
-              label={item}
-              isSelected={category === item}
-              onPress={() => setCategory(item)}
-            />
-          ))}
-        </View>
-
+        {userRole === 'Admin' ? renderAdminOptions() : null}
+        
         {category && (
-          <>
-            <Text style={styles.label}>
-              {category === "Clubs" ? "Club Name*" : "Title*"}
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter a catchy title..."
-              value={title}
-              onChangeText={setTitle}
-            />
+          <View style={styles.formContainer}>
+            {category !== "Social" && (
+              <>
+                <Text style={styles.label}>
+                  {category === "Clubs" ? "Club Name*" : "Title*"}
+                </Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter a catchy title..."
+                  value={title}
+                  onChangeText={setTitle}
+                />
+              </>
+            )}
 
             <Text style={styles.label}>
-              {category === "Social" ? "Content*" : "Description*"}
+              {category === "Social" ? "What's on your mind?*" : "Description*"}
             </Text>
             <TextInput
               style={[styles.input, styles.textArea]}
@@ -217,7 +238,7 @@ export default function PostForm() {
               ) : (
                 <View style={styles.imagePlaceholder}>
                   <Ionicons name="camera-outline" size={36} color="#888" />
-                  <Text style={styles.imagePlaceholderText}>Upload</Text>
+                  <Text style={styles.imagePlaceholderText}>Upload Image</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -233,7 +254,7 @@ export default function PostForm() {
                 <Text style={styles.submitButtonText}>Post It!</Text>
               )}
             </TouchableOpacity>
-          </>
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -241,35 +262,53 @@ export default function PostForm() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#f8f9fa" },
-  container: { flex: 1, padding: 20 },
-  header: { flexDirection: "row", alignItems: "center", marginBottom: 20 },
+  safeArea: { flex: 1, backgroundColor: "#F7F9FC" },
+  container: { flex: 1, paddingHorizontal: 20 },
+  header: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    paddingVertical: 10,
+  },
+  backButton: {
+    padding: 5,
+  },
   heading: {
     fontSize: 24,
     fontFamily: "Poppins-Bold",
-    color: "#333",
+    color: "#2c3e50",
     marginLeft: 15,
+  },
+  formContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    marginTop: 10,
+    shadowColor: "#4A90E2",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
   label: {
     fontSize: 16,
     fontFamily: "Poppins-SemiBold",
-    color: "#555",
-    marginTop: 20,
+    color: "#34495e",
+    marginTop: 15,
     marginBottom: 8,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    backgroundColor: "#fff",
+    backgroundColor: "#f8f9fa",
     borderRadius: 12,
-    padding: 12,
+    padding: 15,
     fontSize: 15,
     fontFamily: "Poppins-Regular",
+    borderWidth: 1,
+    borderColor: '#e0e6ed',
   },
   textArea: { height: 120, textAlignVertical: "top" },
   row: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   button: {
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: colors.primary,
     borderRadius: 20,
     paddingVertical: 8,
@@ -283,13 +322,13 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 180,
     borderWidth: 2,
-    borderColor: "#ddd",
+    borderColor: "#e0e6ed",
     borderStyle: "dashed",
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 8,
-    backgroundColor: "#fff",
+    backgroundColor: "#f8f9fa",
     overflow: "hidden",
   },
   imagePlaceholder: { alignItems: "center" },
@@ -299,24 +338,17 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   imagePreview: { width: "100%", height: "100%" },
-  datePickerButton: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 12,
-    padding: 12,
-  },
-  datePickerText: {
-    fontFamily: "Poppins-Regular",
-    fontSize: 15,
-    color: "#333",
-  },
   submitButton: {
     backgroundColor: colors.primary,
-    paddingVertical: 15,
-    borderRadius: 12,
-    marginTop: 40,
+    paddingVertical: 16,
+    borderRadius: 15,
+    marginTop: 30,
     alignItems: "center",
+    shadowColor: colors.primary,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 8,
   },
   submitButtonText: { color: "#fff", fontSize: 18, fontFamily: "Poppins-Bold" },
 });

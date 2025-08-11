@@ -1,4 +1,3 @@
-//components/PaymentModal.jsx
 import {
   Modal,
   View,
@@ -8,7 +7,8 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Image
+  Image,
+  ActivityIndicator,
 } from "react-native";
 
 import colors from "../assets/utils/colors";
@@ -16,18 +16,16 @@ import { useState } from "react";
 import axios from "axios";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import paymentImage from "../assets/images/payment.png";
+
 export default function PaymentModal({ data, Payto, receiverid }) {
   const [amount, setAmount] = useState("");
   const [pin, setPin] = useState("");
   const [showPinInput, setShowPinInput] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [isLoading, setIsLoading]=useState(false)
-
-  const handlePay = async () => {
-    if (!amount.trim()) {
-      return;
-    }
-    setShowPinInput(true);
+  const handlePay = () => {
+    if (amount.trim()) setShowPinInput(true);
   };
 
   const handlePinVerify = async () => {
@@ -35,40 +33,32 @@ export default function PaymentModal({ data, Payto, receiverid }) {
       alert("Please enter your PIN.");
       return;
     }
-setIsLoading(true)
+    setIsLoading(true);
     try {
       const storedPin = await AsyncStorage.getItem("userPin");
-
       if (pin === storedPin) {
         const token = await AsyncStorage.getItem("authToken");
-
-        const payload = {
-          receiverId: receiverid,
-          amount: Number(amount),
-        };
-
-        const res = await axios.post(
+        const payload = { receiverId: receiverid, amount: Number(amount) };
+        await axios.post(
           `transactions/send`,
           payload,
           {
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
           }
         );
-
-        console.log("Transaction successful:", res.data);
         alert("Payment successful!");
-        data(); 
+        data();
       } else {
         alert("Incorrect PIN. Please try again.");
-        setPin(""); 
+        setPin("");
       }
-    } catch (error) {
-      console.error("Payment error:", error);
+    } catch {
       alert("Payment failed. Please try again.");
     }
+    setIsLoading(false);
   };
 
   const handleCancel = () => {
@@ -81,12 +71,17 @@ setIsLoading(true)
   };
 
   return (
-    <Modal transparent={true} animationType="fade">
+    <Modal transparent animationType="fade">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.modalOverlay}
       >
         <View style={styles.modalContainer}>
+
+          {!showPinInput && (
+            <Image source={paymentImage} style={styles.paymentImage} resizeMode="contain" />
+          )}
+
           <Text style={styles.title}>
             {showPinInput ? "Enter PIN" : `Paying: ${Payto}`}
           </Text>
@@ -99,48 +94,59 @@ setIsLoading(true)
                 placeholder="0.00"
                 keyboardType="numeric"
                 value={amount}
-                onChangeText={(text) => {
-                  const numericValue = text.replace(/[^0-9.]/g, "");
-                  setAmount(numericValue);
-                }}
-                placeholderTextColor="#aaa"
+                onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ""))}
+                placeholderTextColor="#bbb"
+                editable={!isLoading}
               />
             </View>
-          ) : 
-          
-          
-          (
+          ) : isLoading ? (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.processingText}>Processing Payment...</Text>
+            </View>
+          ) : (
             <TextInput
               style={styles.pinInput}
               placeholder="••••"
-              secureTextEntry={true}
+              secureTextEntry
               keyboardType="number-pad"
               value={pin}
               onChangeText={setPin}
-              maxLength={4} 
-              placeholderTextColor="#aaa"
+              maxLength={4}
+              placeholderTextColor="#bbb"
+              editable={!isLoading}
             />
           )}
 
           {!showPinInput ? (
             <TouchableOpacity
-              style={[styles.payButton, !amount.trim() && styles.payButtonDisabled]}
+              style={[
+                styles.payButton,
+                (!amount.trim() || isLoading) && styles.payButtonDisabled,
+              ]}
               onPress={handlePay}
-              disabled={!amount.trim()}
+              disabled={!amount.trim() || isLoading}
+              activeOpacity={0.8}
             >
-              <Text style={styles.payText}>Pay Now</Text>
+              <Text style={styles.payText}>
+                {isLoading ? "Processing..." : "Pay Now"}
+              </Text>
             </TouchableOpacity>
-          ) : (
+          ) : !isLoading ? (
             <TouchableOpacity
-              style={[styles.payButton, !pin.trim() && styles.payButtonDisabled]}
+              style={[
+                styles.payButton,
+                (!pin.trim() || isLoading) && styles.payButtonDisabled,
+              ]}
               onPress={handlePinVerify}
-              disabled={!pin.trim()}
+              disabled={!pin.trim() || isLoading}
+              activeOpacity={0.8}
             >
               <Text style={styles.payText}>Verify PIN</Text>
             </TouchableOpacity>
-          )}
+          ) : null}
 
-          <TouchableOpacity onPress={handleCancel} style={styles.cancelButton}>
+          <TouchableOpacity onPress={handleCancel} style={styles.cancelButton} activeOpacity={0.7}>
             <Text style={styles.cancelText}>{showPinInput ? "Back" : "Cancel"}</Text>
           </TouchableOpacity>
 
@@ -153,84 +159,117 @@ setIsLoading(true)
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "rgba(0,0,0,0.55)",
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
   modalContainer: {
-    width: "85%",
-    padding: 25,
+    width: "100%",
+    maxWidth: 400,
     backgroundColor: colors.white,
     borderRadius: 20,
-    alignItems: "center",
-    elevation: 10,
+    paddingVertical: 30,
+    paddingHorizontal: 28,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 15,
+    alignItems: "center",
+  },
+  paymentImage: {
+    width: 120,
+    height: 120,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: "Poppins-SemiBold",
-    marginBottom: 25,
-    color: "#333",
+    color: "#222",
+    marginBottom: 28,
     textAlign: "center",
   },
-  // Amount input styles
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    marginBottom: 25,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    marginBottom: 28,
     width: "100%",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   currencySymbol: {
-    fontSize: 24,
+    fontSize: 26,
     fontFamily: "Poppins-Bold",
     color: colors.primary,
-    marginRight: 5,
+    marginRight: 8,
   },
   amountInput: {
     flex: 1,
-    fontSize: 24,
+    fontSize: 26,
     fontFamily: "Poppins-Bold",
     color: colors.primary,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   pinInput: {
-    fontSize: 24,
+    fontSize: 26,
     fontFamily: "Poppins-Bold",
     textAlign: "center",
-    letterSpacing: 25,
+    letterSpacing: 26,
     width: "70%",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 12,
-    paddingVertical: 12,
-    marginBottom: 25,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 14,
+    paddingVertical: 14,
+    marginBottom: 28,
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
   },
   payButton: {
     backgroundColor: colors.primary,
-    borderRadius: 15,
-    paddingVertical: 15,
+    borderRadius: 16,
+    paddingVertical: 16,
     width: "100%",
     alignItems: "center",
+    shadowColor: colors.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
   },
   payButtonDisabled: {
-    backgroundColor: "#a0c4ff",
+    backgroundColor: "#aacbff",
+    shadowOpacity: 0,
   },
   payText: {
     color: colors.white,
     fontFamily: "Poppins-SemiBold",
-    fontSize: 16,
+    fontSize: 17,
   },
   cancelButton: {
-    marginTop: 15,
+    marginTop: 18,
   },
   cancelText: {
-    color: "#777",
+    color: "#555",
     fontFamily: "Poppins-Regular",
-    fontSize: 14,
+    fontSize: 15,
+  },
+  loaderContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    width: "100%",
+    paddingVertical: 14,
+  },
+  processingText: {
+    fontSize: 16,
+    color: colors.primary,
+    fontFamily: "Poppins-SemiBold",
   },
 });

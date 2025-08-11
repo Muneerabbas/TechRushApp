@@ -1,5 +1,4 @@
-// app/(tabs)/components/social/EventSocialModal.jsx
-import { React, useCallback, useState } from "react";
+import { React, useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -7,122 +6,170 @@ import {
   StyleSheet,
   TouchableOpacity,
   Image,
-  Alert
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { joinClub } from "../../services/apiService";
- 
 import colors from "../../../assets/utils/colors";
 import { CPaymentModal } from "./CPaymentModal";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export const ClubModal = ({ visible, item, onClose }) => {
+export const ClubModal = ({ visible, item, onClose, onJoinSuccess }) => {
   if (!item) return null;
-const [JoinModal,SetJoinModal]=useState(false)
-  const FallbackImage = ({ uri, style, type }) => {
-    const [hasError, setHasError] = useState(!uri);
 
-    const getDefaultImage = () => {
-      switch (type) {
-        case "event":
-          return require("../../../assets/images/event.png");
-        case "social":
-          return require("../../../assets/images/social.png");
-        case "club":
-        default:
-          return require("../../../assets/images/club.webp");
+  const [isJoinModalVisible, setIsJoinModalVisible] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
+  const [isAlreadyJoined, setIsAlreadyJoined] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
+
+  useEffect(() => {
+    const checkMembershipStatus = async () => {
+      if (!visible || !item) return;
+
+      setIsCheckingStatus(true);
+      try {
+        const userId = await AsyncStorage.getItem("userID");
+        if (userId && item.members && Array.isArray(item.members)) {
+          // FIX: Check against the members array from the item prop directly
+          const joined = item.members.some(member => {
+            const memberId = typeof member.user === 'object' && member.user !== null ? member.user._id : member.user;
+            return memberId === userId;
+          });
+          setIsAlreadyJoined(joined);
+        } else {
+          setIsAlreadyJoined(false);
+        }
+      } catch (error) {
+        console.error("Failed to check membership status:", error);
+        setIsAlreadyJoined(false);
+      } finally {
+        setIsCheckingStatus(false);
       }
     };
 
+    checkMembershipStatus();
+  }, [visible, item]);
+
+  const FallbackImage = ({ uri, style }) => {
+    const [hasError, setHasError] = useState(!uri);
     return (
       <Image
-        source={hasError ? getDefaultImage() : { uri }}
+        source={
+          hasError
+            ? require("../../../assets/images/club.webp")
+            : { uri }
+        }
         style={style}
         onError={() => setHasError(true)}
       />
     );
   };
 
-
-
-const handleClubJoin =useCallback(async ()=>{
-
-  if(item.eventType == "Paid" ){
-    SetJoinModal(true);
-  }
-  else{
-    Alert.alert("Successfully joined the club!");
-
+  const handleSuccessfulJoin = () => {
+    setIsAlreadyJoined(true);
+    if (onJoinSuccess) {
+      onJoinSuccess(item._id);
+    }
     onClose();
-    const res = await joinClub(clubID);
-    console.log("Join club successful:", res.data);
-   
+  };
 
-  }
+  const handleClubJoin = async () => {
+    if (item.eventType === "Paid") {
+      setIsJoinModalVisible(true);
+    } else {
+      setIsJoining(true);
+      try {
+        const token = await AsyncStorage.getItem("authToken");
+        if (!token) {
+          Alert.alert("Authentication Error", "You must be logged in to join.");
+          setIsJoining(false);
+          return;
+        }
+        await joinClub(item._id);
+        Alert.alert("Success!", "You have successfully joined the club.");
+        handleSuccessfulJoin();
+      } catch (error) {
+        console.error("Join club error:", error);
+        Alert.alert("Error", "Failed to join the club. You may have already joined.");
+      } finally {
+        setIsJoining(false);
+      }
+    }
+  };
 
-
-
-})
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Ionicons name="close-circle" size={30} color="#555" />
-          </TouchableOpacity>
+    <>
+      <Modal
+        visible={visible}
+        transparent
+        animationType="fade"
+        onRequestClose={onClose}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <Ionicons name="close-circle" size={32} color="#888" />
+            </TouchableOpacity>
 
-          <FallbackImage
-            uri={
-              item.coverImage
-                ? `https://techrush-backend.onrender.com${item.coverImage}`
-                : null
-            }
-            style={styles.modalImage}
-            type="club"
-          />
-          <Text style={styles.modalTitle}>{item.name || item.title}</Text>
-          <Text style={styles.modalDescription}>
-            <Text style={{ fontFamily: "Poppins-Bold" }}>Description: </Text>
-            {item.description || item.content}
-          </Text>
-          <Text
-            style={[
-              styles.modalDescription,
-              { color: "green", fontFamily: "Poppins-SemiBold" },
-            ]}
-          >
-          
-            <Text style={{ fontFamily: "Poppins-Bold" }}>Type: </Text>
-            {item.eventType}
-          </Text>
-          {item.eventType == "Paid" ? (
-            <Text
+            <FallbackImage
+              uri={
+                item.coverImage
+                  ? `https://techrush-backend.onrender.com${item.coverImage}`
+                  : null
+              }
+              style={styles.modalImage}
+            />
+            <Text style={styles.modalTitle}>{item.name || item.title}</Text>
+            
+            <View style={styles.infoRow}>
+                <Ionicons name="document-text-outline" size={20} color={colors.primary} />
+                <Text style={styles.modalDescription}>
+                    {item.description || item.content}
+                </Text>
+            </View>
+
+            <View style={styles.infoRow}>
+                <Ionicons name={item.eventType === "Paid" ? "pricetag-outline" : "leaf-outline"} size={20} color={item.eventType === "Paid" ? "#c48b00" : "green"} />
+                <Text style={[styles.modalDescription, { color: item.eventType === "Paid" ? "#c48b00" : "green", fontFamily: "Poppins-SemiBold" }]}>
+                    {item.eventType}
+                    {item.eventType === "Paid" && `: ₹${item.ticketPrice}`}
+                </Text>
+            </View>
+
+            <TouchableOpacity 
               style={[
-                styles.modalDescription,
-                { color: "green", fontFamily: "Poppins-SemiBold" },
-              ]}
+                styles.button, 
+                (isJoining || isCheckingStatus) && styles.buttonDisabled,
+                isAlreadyJoined && styles.buttonJoined
+              ]} 
+              onPress={handleClubJoin}
+              disabled={isAlreadyJoined || isJoining || isCheckingStatus}
             >
-              <Text style={{ fontFamily: "Poppins-Bold" }}>Price: </Text>
-              {item.ticketPrice}
-            </Text>
-          ) : null}
-
-          <TouchableOpacity style={styles.button} onPress={handleClubJoin}>
-            <Text style={styles.registertxt}>Register Now!</Text>
-          </TouchableOpacity>
+              {isJoining || isCheckingStatus ? (
+                <ActivityIndicator color={colors.white} />
+              ) : isAlreadyJoined ? (
+                <View style={styles.joinedContainer}>
+                  <Ionicons name="checkmark-circle" size={22} color={colors.white} />
+                  <Text style={styles.registertxt}>Already Joined</Text>
+                </View>
+              ) : (
+                <Text style={styles.registertxt}>Register Now!</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-    {JoinModal?  <CPaymentModal
-      data={()=>SetJoinModal(!JoinModal)}
-      clubID={item._id}
-      Close={onClose}
-
-        />:null}
-      </View>
-    </Modal>
+      </Modal>
+      
+      {isJoinModalVisible && (
+        <CPaymentModal
+          data={() => setIsJoinModalVisible(false)}
+          clubID={item._id}
+          Close={handleSuccessfulJoin}
+          amount={item.ticketPrice}
+        />
+      )}
+    </>
   );
 };
 
@@ -131,35 +178,87 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
+    backgroundColor: "rgba(0,0,0,0.6)",
   },
   modalContainer: {
     width: "90%",
+    maxWidth: 400,
     padding: 20,
     backgroundColor: "white",
-    borderRadius: 20,
+    borderRadius: 24,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    elevation: 10,
   },
-  closeButton: { alignSelf: "flex-end", position: "absolute", margin: 3 },
-  modalTitle: { fontSize: 22, fontFamily: "Poppins-Bold", marginVertical: 10,textAlign:"center" },
-  modalDescription: { fontSize: 16, fontFamily: "Poppins-Regular" },
+  closeButton: { 
+    position: "absolute", 
+    top: 10, 
+    right: 10, 
+    zIndex: 1,
+  },
+  modalTitle: { 
+    fontSize: 24, 
+    fontFamily: "Poppins-Bold", 
+    marginVertical: 15, 
+    textAlign: "center",
+    color: "#333",
+  },
+  modalDescription: { 
+    flex: 1,
+    fontSize: 15, 
+    fontFamily: "Poppins-Regular",
+    color: "#555",
+    lineHeight: 22,
+  },
   modalImage: {
     width: "100%",
-    height: 200,
-    backgroundColor: "#e9e9e9",
-    borderRadius: 20,
+    height: 180,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 16,
+    marginBottom: 10,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    width: '100%',
+    marginBottom: 15,
+    gap: 10,
   },
   button: {
-    width: "45%",
-    height: 55,
-    borderRadius: 12,
-    alignSelf: "center",
-    margin: 25,
+    width: "80%",
+    height: 50,
+    borderRadius: 15,
+    marginTop: 15,
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: colors.primary,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  buttonDisabled: {
+    backgroundColor: "#a9a9a9",
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  buttonJoined: {
+    backgroundColor: "#27ae60",
+    shadowColor: "#27ae60",
+    shadowOpacity: 0.3,
+  },
+  joinedContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   registertxt: {
     fontFamily: "Poppins-Bold",
     color: colors.white,
+    fontSize: 16,
   },
 });

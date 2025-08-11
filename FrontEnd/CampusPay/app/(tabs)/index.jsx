@@ -6,17 +6,35 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
+  TextInput,
+  Text,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts } from "expo-font";
 import axios from "axios";
+import { Ionicons } from "@expo/vector-icons";
+
 import FooterComponent from "../components/Footer";
 import PaymentModal from "../components/PaymentModal";
 import colors from "../assets/utils/colors";
 import { Header } from "./components/home/Header";
-import { PayUser } from "./components/home/PayUser";
 import { QuickActions } from "./components/home/QuickActions";
 import { RecentGroups } from "../components/RecentGroups";
+import { scanIdCard } from "../services/idCardScanner";
+
+const LoadingModal = ({ visible }) => (
+  <Modal transparent={true} animationType="fade" visible={visible}>
+    <View style={styles.loadingOverlay}>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    </View>
+  </Modal>
+);
 
 export default function HomeScreen() {
   const [fontsLoaded] = useFonts({
@@ -33,6 +51,7 @@ export default function HomeScreen() {
   const [searchedUsers, setSearchedUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [ocrLoading, setOcrLoading] = useState(false);
   const [groups, setGroups] = useState([]);
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -123,9 +142,23 @@ export default function HomeScreen() {
     setSearchQuery(user.name);
   };
 
+  const handleScanId = async () => {
+    setOcrLoading(true);
+    try {
+      const extractedName = await scanIdCard(false, console.log);
+      if (extractedName) {
+        setSearchQuery(extractedName);
+      }
+    } catch (err) {
+      console.error("Scan failed:", err);
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
   const payUserScale = scrollY.interpolate({
     inputRange: [0, 150],
-    outputRange: [1, 0.85],
+    outputRange: [1, 0.9],
     extrapolate: "clamp",
   });
 
@@ -136,11 +169,7 @@ export default function HomeScreen() {
   });
 
   if (!fontsLoaded) {
-    return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <LoadingModal visible={true} />;
   }
 
   return (
@@ -148,6 +177,7 @@ export default function HomeScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
+      <LoadingModal visible={!fontsLoaded} />
       <Header name={name} role={role} onReload={loadInitialData} />
       <View style={styles.mainContentArea}>
         <Animated.ScrollView
@@ -161,18 +191,42 @@ export default function HomeScreen() {
           )}
         >
           <Animated.View
-            style={{
-              paddingHorizontal: 25,
-              transform: [{ translateY: payUserTranslateY }, { scale: payUserScale }],
-            }}
+            style={[
+              styles.payUserContainer,
+              {
+                transform: [{ translateY: payUserTranslateY }, { scale: payUserScale }],
+              },
+            ]}
           >
-            <PayUser
-              query={searchQuery}
-              setQuery={setSearchQuery}
-              users={searchedUsers}
-              onSelectUser={handleSelectUser}
-              isSearching={isSearching}
-            />
+            <Text style={styles.payUserTitle}>Scan & Pay</Text>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={22} color="#999" style={styles.searchIcon} />
+              <TextInput
+                placeholder="Search user by name or ID..."
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+              />
+              <TouchableOpacity onPress={handleScanId} style={styles.scanButton}>
+                {ocrLoading ? (
+                  <ActivityIndicator size="small" color={colors.primary} />
+                ) : (
+                  <Ionicons name="id-card-outline" size={24} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            </View>
+            {isSearching && <ActivityIndicator style={{ marginVertical: 10 }} />}
+            {searchedUsers.length > 0 && (
+              <View style={styles.searchResultsContainer}>
+                <ScrollView nestedScrollEnabled={true}>
+                  {searchedUsers.map((user) => (
+                    <TouchableOpacity key={user._id} style={styles.userItem} onPress={() => handleSelectUser(user)}>
+                      <Text style={styles.userName}>{user.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
           </Animated.View>
 
           <Animated.View style={{ paddingHorizontal: 25, opacity: fadeQuickActions }}>
@@ -204,7 +258,6 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.primary },
-  loaderContainer: { flex: 1, justifyContent: "center", alignItems: "center" },
   mainContentArea: {
     flex: 1,
     backgroundColor: "#F8F7FF",
@@ -213,4 +266,77 @@ const styles = StyleSheet.create({
     marginTop: -20,
   },
   contentContainer: { paddingVertical: 25 },
+  loadingOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  loadingContainer: {
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 15,
+  },
+  loadingText: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 16,
+    color: '#333',
+  },
+  payUserContainer: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    marginHorizontal: 25,
+    marginBottom: 20,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+  },
+  payUserTitle: {
+    fontFamily: 'Poppins-Bold',
+    fontSize: 20,
+    color: '#333',
+    marginBottom: 15,
+  },
+  searchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f2f5",
+    borderRadius: 15,
+    paddingHorizontal: 10,
+  },
+  searchIcon: {
+    marginRight: 10,
+  },
+  searchInput: {
+    flex: 1,
+    height: 50,
+    fontFamily: "Poppins-Regular",
+    fontSize: 16,
+  },
+  scanButton: {
+    padding: 10,
+  },
+  searchResultsContainer: {
+    marginTop: 10,
+    borderRadius: 15,
+    overflow: 'hidden',
+    maxHeight: 250,
+  },
+  userItem: {
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  userName: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 16,
+  },
 });

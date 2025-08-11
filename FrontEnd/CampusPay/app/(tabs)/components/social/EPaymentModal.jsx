@@ -1,135 +1,108 @@
 import {
-    Modal,
-    View,
-    Text,
-    StyleSheet,
-    TextInput,
-    TouchableOpacity,
-    KeyboardAvoidingView,
-    Platform,
-    Alert,
-  } from "react-native";
-  import colors from "../../../assets/utils/colors";
-  import { useState, useCallback } from "react";
-  import axios from "axios";
-  import AsyncStorage from "@react-native-async-storage/async-storage";
-  import { registerForEvent } from "../../services/apiService";
-  
-  export const EPaymentModal = ({ data, eventID,onClose }) => {
-    const [amount, setAmount] = useState("");
-    const [pin, setPin] = useState("");
-    const [showPinInput, setShowPinInput] = useState(true);
-    const [error, setError] = useState("");
-  
-    const handlePay = async () => {
-      if (!amount.trim() || isNaN(amount) || Number(amount) <= 0) {
-        setError("Please enter a valid amount.");
-        return;
-      }
-      setError("");
-      setShowPinInput(true);
-    };
-  
-   
-    const handleEventRegister = useCallback(async () => {
-      if (!pin.trim() || pin.length !== 4) {
-        setError("Please enter a valid 4-digit PIN.");
-        return;
-      }
-  
-      try {
-        const storedPin = await AsyncStorage.getItem("userPin");
-  
-        if (pin !== storedPin) {
-          setError("Incorrect PIN. Please try again.");
-          setPin("");
-          return;
-        }
-  
-        const token = await AsyncStorage.getItem("authToken");
-        if (!token) {
-          setError("Authentication token not found.");
-          return;
-        }
-  
-        const res = await registerForEvent(eventID);
-        console.log("Event Register successful:", res.data);
-       
-        Alert.alert("Successfully Registered for the  Event!");
-        setPin("");
-        setShowPinInput(false);
-        data(); 
-        onClose()
-       
-      } catch (error) {
-        console.error("Registeration error:", error);
-        console.log(clubID)
-        setError("Failed to Register for Event. Please try again.");
-      }
-    }, [eventID, data, pin]);
-  
-    const handleCancel = () => {
-      setError("");
-      
-        setShowPinInput(false);
-        setPin("");
-      
-        data();
-      
-    };
-  
-    return (
-      <Modal transparent={true} animationType="fade" accessible={true}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.modalOverlay}
-        >
-          <View style={styles.modalContainer}>
-            <Text style={styles.title} accessibilityRole="header">
-              Enter PIN
-            </Text>
-  
-            {error ? <Text style={styles.errorText}>{error}</Text> : null}
-  
-          
-              <TextInput
-                style={styles.pinInput}
-                placeholder="••••"
-                secureTextEntry={true}
-                keyboardType="number-pad"
-                value={pin}
-                onChangeText={setPin}
-                maxLength={4}
-                placeholderTextColor="#aaa"
-                accessibilityLabel="PIN input"
-              />
-            
-  
-           
-              <TouchableOpacity
-                style={[styles.payButton, !pin.trim() && styles.payButtonDisabled]}
-                onPress={handleEventRegister}
-                disabled={!pin.trim()}
-                accessibilityRole="button"
-                accessibilityLabel="Verify PIN"
-              >
-                <Text style={styles.payText}>Verify PIN</Text>
-              </TouchableOpacity>
-          
-  <TouchableOpacity
-  style={styles.cancelButton}
-  onPress={data}
-  ><Text style={styles.cancelText}> Cancel</Text></TouchableOpacity>
-           
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-    );
-  };
-  
+  Modal,
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+  ActivityIndicator,
+  Image,
+} from "react-native";
+import colors from "../../../assets/utils/colors";
+import { useState, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { registerForEvent } from "../../services/apiService";
 
-  
-  const styles = StyleSheet.create({
+export const EPaymentModal = ({ data, eventID, onClose, amount }) => {
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleEventRegister = useCallback(async () => {
+    if (!pin.trim() || pin.length !== 4) {
+      setError("Please enter a valid 4-digit PIN.");
+      return;
+    }
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const storedPin = await AsyncStorage.getItem("userPin");
+      if (pin !== storedPin) {
+        setError("Incorrect PIN. Please try again.");
+        setPin("");
+        setIsLoading(false);
+        return;
+      }
+
+      const token = await AsyncStorage.getItem("authToken");
+      if (!token) {
+        setError("Authentication token not found.");
+        setIsLoading(false);
+        return;
+      }
+
+      await registerForEvent(eventID);
+      Alert.alert("Success!", "You have successfully registered for the event.");
+      data();
+      onClose();
+    } catch (error) {
+      console.error("Registration error:", error);
+      setError("Failed to register for the event. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [eventID, data, pin, onClose]);
+
+  return (
+    <Modal transparent={true} animationType="fade" accessible={true}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.modalOverlay}
+      >
+        <View style={styles.modalContainer}>
+          <Image source={require('../../../assets/images/payment.png')} style={styles.paymentImage} />
+          <Text style={styles.title}>Confirm Registration</Text>
+          <Text style={styles.amountText}>
+            You are paying <Text style={{fontFamily: 'Poppins-Bold'}}>₹{amount}</Text>
+          </Text>
+          <Text style={styles.subtitle}>Enter your 4-digit PIN to confirm</Text>
+
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <TextInput
+            style={styles.pinInput}
+            placeholder="••••"
+            secureTextEntry={true}
+            keyboardType="number-pad"
+            value={pin}
+            onChangeText={setPin}
+            maxLength={4}
+            placeholderTextColor="#bbb"
+            accessibilityLabel="PIN input"
+          />
+
+          <TouchableOpacity
+            style={[styles.payButton, (isLoading || pin.length !== 4) && styles.payButtonDisabled]}
+            onPress={handleEventRegister}
+            disabled={isLoading || pin.length !== 4}
+          >
+            {isLoading ? <ActivityIndicator color={colors.white} /> : <Text style={styles.payText}>Pay & Register</Text>}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.cancelButton} onPress={data}>
+            <Text style={styles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
     modalOverlay: {
       flex: 1,
       backgroundColor: "rgba(0,0,0,0.6)",
@@ -137,7 +110,8 @@ import {
       alignItems: "center",
     },
     modalContainer: {
-      width: "85%",
+      width: "90%",
+      maxWidth: 400,
       padding: 25,
       backgroundColor: colors.white,
       borderRadius: 20,
@@ -148,12 +122,29 @@ import {
       shadowOpacity: 0.3,
       shadowRadius: 5,
     },
+    paymentImage: {
+      width: 100,
+      height: 100,
+      marginBottom: 15,
+    },
     title: {
       fontSize: 22,
-      fontFamily: "Poppins-SemiBold",
-      marginBottom: 25,
+      fontFamily: "Poppins-Bold",
       color: "#333",
       textAlign: "center",
+    },
+    amountText: {
+      fontSize: 18,
+      fontFamily: 'Poppins-Regular',
+      color: '#444',
+      marginTop: 5,
+      marginBottom: 10,
+    },
+    subtitle: {
+      fontSize: 14,
+      fontFamily: 'Poppins-Regular',
+      color: '#666',
+      marginBottom: 20,
     },
     errorText: {
       color: "red",
@@ -162,38 +153,18 @@ import {
       marginBottom: 15,
       textAlign: "center",
     },
-    inputContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: "#f5f5f5",
-      borderRadius: 12,
-      paddingHorizontal: 15,
-      marginBottom: 25,
-      width: "100%",
-    },
-    currencySymbol: {
-      fontSize: 24,
-      fontFamily: "Poppins-Bold",
-      color: colors.primary,
-      marginRight: 5,
-    },
-    amountInput: {
-      flex: 1,
-      fontSize: 24,
-      fontFamily: "Poppins-Bold",
-      color: colors.primary,
-      paddingVertical: 12,
-    },
     pinInput: {
-      fontSize: 24,
+      fontSize: 28,
       fontFamily: "Poppins-Bold",
       textAlign: "center",
-      letterSpacing: 10, 
-      width: "70%",
+      letterSpacing: 20,
+      width: "80%",
       backgroundColor: "#f5f5f5",
       borderRadius: 12,
       paddingVertical: 12,
       marginBottom: 25,
+      borderWidth: 1,
+      borderColor: '#ddd',
     },
     payButton: {
       backgroundColor: colors.primary,
@@ -201,9 +172,14 @@ import {
       paddingVertical: 15,
       width: "100%",
       alignItems: "center",
+      shadowColor: colors.primary,
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 4 },
     },
     payButtonDisabled: {
       backgroundColor: "#a0c4ff",
+      shadowOpacity: 0,
     },
     payText: {
       color: colors.white,

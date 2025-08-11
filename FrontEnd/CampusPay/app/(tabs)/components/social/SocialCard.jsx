@@ -1,14 +1,39 @@
-// app/(tabs)/components/social/SocialCard.jsx
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import colors from '../../../assets/utils/colors';
+
+const FallbackImage = ({ uri, type, style }) => {
+    const [hasError, setHasError] = useState(!uri);
+
+    const getDefaultImage = () => {
+      switch (type) {
+        case "event":
+          return require("../../../assets/images/event.png");
+        case "social":
+          return require("../../../assets/images/social.png");
+        case "club":
+        default:
+          return require("../../../assets/images/club.webp");
+      }
+    };
+
+    return (
+      <Image
+        source={hasError ? getDefaultImage() : { uri }}
+        style={style}
+        onError={() => setHasError(true)}
+      />
+    );
+};
+
 
 export const SocialCard = ({ data, type, onCardPress }) => {
   const renderClubCard = useCallback(({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => onCardPress(item)}>
-      <Image
-        source={{ uri: item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : "https://via.placeholder.com/180x100.png?text=Club" }}
+      <FallbackImage
+        uri={item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : null}
         style={styles.image}
+        type="club"
       />
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={2}>{item.name}</Text>
@@ -19,9 +44,10 @@ export const SocialCard = ({ data, type, onCardPress }) => {
 
   const renderEventCard = useCallback(({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => onCardPress(item)}>
-      <Image
-        source={{ uri: item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : "https://via.placeholder.com/180x100.png?text=Event" }}
+      <FallbackImage
+        uri={item.coverImage ? `https://techrush-backend.onrender.com${item.coverImage}` : null}
         style={styles.image}
+        type="event"
       />
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
@@ -33,9 +59,10 @@ export const SocialCard = ({ data, type, onCardPress }) => {
 
   const renderSocialCard = useCallback(({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => onCardPress(item)}>
-      <Image
-        source={{ uri: item.image ? `https://techrush-backend.onrender.com${item.image}` : "https://via.placeholder.com/180x100.png?text=Post" }}
+      <FallbackImage
+        uri={item.image ? `https://techrush-backend.onrender.com${item.image}` : null}
         style={styles.image}
+        type="social"
       />
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.author?.name}</Text>
@@ -59,17 +86,58 @@ export const SocialCard = ({ data, type, onCardPress }) => {
 };
 
 const styles = StyleSheet.create({
-  listContent: { paddingHorizontal: 16, paddingBottom: 10 },
+  listContent: { paddingHorizontal: 16, paddingVertical: 10 },
   card: {
-    width: 180, backgroundColor: "#fff", borderRadius: 18, marginRight: 16,
-    elevation: 3, shadowColor: "#000", shadowOpacity: 0.08,
-    shadowOffset: { width: 0, height: 4 }, shadowRadius: 10, overflow: 'hidden',
+    width: 180, 
+    backgroundColor: "#fff", 
+    borderRadius: 18, 
+    marginRight: 16,
+    elevation: 4, 
+    shadowColor: "#000", 
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 4 }, 
+    shadowRadius: 12, 
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
-  image: { width: "100%", height: 100, backgroundColor: '#e0e0e0' },
-  cardContent: { padding: 12, minHeight: 100, justifyContent: 'space-between' },
-  cardTitle: { fontSize: 15, fontFamily: "Poppins-SemiBold", color: "#333" },
-  cardSubtitle: { fontSize: 12, fontFamily: "Poppins-Regular", color: "#666", marginTop: 2 },
-  cardDescription: { fontSize: 13, fontFamily: "Poppins-Regular", color: "#555", marginTop: 4 },
-  cardInfo: { fontSize: 13, fontFamily: "Poppins-SemiBold", color: colors.primary, marginTop: 8 },
-  cardPrice: { fontSize: 15, fontFamily: "Poppins-Bold", color: "#2e7d32", marginTop: 8 },
+  image: { 
+    width: "100%", 
+    height: 100, 
+    backgroundColor: '#e9e9e9' 
+  },
+  cardContent: { 
+    padding: 12, 
+    minHeight: 100, 
+    justifyContent: 'space-between' 
+  },
+  cardTitle: { 
+    fontSize: 15, 
+    fontFamily: "Poppins-SemiBold", 
+    color: "#333" 
+  },
+  cardSubtitle: { 
+    fontSize: 12, 
+    fontFamily: "Poppins-Regular", 
+    color: "#666", 
+    marginTop: 2 
+  },
+  cardDescription: { 
+    fontSize: 13, 
+    fontFamily: "Poppins-Regular", 
+    color: "#555", 
+    marginTop: 4 
+  },
+  cardInfo: { 
+    fontSize: 13, 
+    fontFamily: "Poppins-SemiBold", 
+    color: colors.primary, 
+    marginTop: 8 
+  },
+  cardPrice: { 
+    fontSize: 15, 
+    fontFamily: "Poppins-Bold", 
+    color: "#2e7d32", 
+    marginTop: 8 
+  },
 });

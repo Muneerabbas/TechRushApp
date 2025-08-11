@@ -9,19 +9,17 @@ import {
   TouchableOpacity,
   RefreshControl,
   ActivityIndicator,
-  Alert,
   ScrollView,
 } from "react-native";
 import { useFonts } from "expo-font";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "@expo/vector-icons";
-import  FooterComponent  from "../components/Footer";
+import FooterComponent from "../components/Footer";
 import colors from "../assets/utils/colors";
-import {SocialModal} from "./components/social/SocialModal";
-import {EventModal} from "./components/social/EventModal";
-import {ClubModal} from "../(tabs)/components/social/ClubModal";
-
+import { SocialModal } from "./components/social/SocialModal";
+import { EventModal } from "./components/social/EventModal";
+import { ClubModal } from "../(tabs)/components/social/ClubModal";
 import { getSocialFeed } from "./services/apiService";
 
 const FallbackImage = ({ uri, style, type }) => {
@@ -65,13 +63,13 @@ const ErrorScreen = ({ onRetry }) => (
 );
 
 export default function Social() {
-  const [ClubselectedItem, setClubSelectedItem] = useState(null);
-  const [ClubmodalVisible, setClubModalVisible] = useState(false);
-  const [EventselectedItem, setEventSelectedItem] = useState(null);
-  const [EventmodalVisible, setEventModalVisible] = useState(false);
-  const [SocialselectedItem, setSocialSelectedItem] = useState(null);
-  const [SocialmodalVisible, setSocialModalVisible] = useState(false);
-  const [role, setRole] = useState("");
+  const [clubSelectedItem, setClubSelectedItem] = useState(null);
+  const [isClubModalVisible, setClubModalVisible] = useState(false);
+  const [eventSelectedItem, setEventSelectedItem] = useState(null);
+  const [isEventModalVisible, setEventModalVisible] = useState(false);
+  const [socialSelectedItem, setSocialSelectedItem] = useState(null);
+  const [isSocialModalVisible, setSocialModalVisible] = useState(false);
+  
   const [clubs, setClubs] = useState([]);
   const [events, setEvents] = useState([]);
   const [communityPosts, setCommunityPosts] = useState([]);
@@ -90,12 +88,9 @@ export default function Social() {
     setIsError(false);
     try {
       const { clubs, events, socials } = await getSocialFeed();
-      const userRole = await AsyncStorage.getItem("role");
-
       setClubs(clubs);
       setEvents(events);
       setCommunityPosts(socials);
-      setRole(userRole);
     } catch (err) {
       console.error("Error fetching data:", err);
       setIsError(true);
@@ -123,10 +118,16 @@ export default function Social() {
     setEventSelectedItem(item);
     setEventModalVisible(true);
   };
+
   const openSocialModal = (item) => {
     setSocialSelectedItem(item);
     setSocialModalVisible(true);
   };
+
+  const handleActionSuccess = () => {
+    getAllData();
+  };
+
   const renderClubCard = ({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => openClubModal(item)}>
       <FallbackImage
@@ -137,12 +138,7 @@ export default function Social() {
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
         <Text style={styles.cardPrice}>{item.eventType}</Text>
-        {
-
-item.ticketPrice==0?null:<Text style={styles.cardPrice}>₹{item.ticketPrice}</Text>
-
-        }
-
+        {item.ticketPrice === 0 ? null : <Text style={styles.cardPrice}>₹{item.ticketPrice}</Text>}
       </View>
     </TouchableOpacity>
   );
@@ -195,7 +191,7 @@ item.ticketPrice==0?null:<Text style={styles.cardPrice}>₹{item.ticketPrice}</T
           />
         }
       >
-        <Text style={styles.sectionHeader}>Clubs</Text>
+        <Text style={styles.sectionHeader}>Discover Clubs</Text>
         <FlatList
           data={clubs}
           renderItem={renderClubCard}
@@ -222,53 +218,44 @@ item.ticketPrice==0?null:<Text style={styles.cardPrice}>₹{item.ticketPrice}</T
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.listPadding}
         />
-      <FooterComponent/>
+        <FooterComponent/>
       </ScrollView>
 
-      {role === "Admin" && (
-        <TouchableOpacity
-          style={styles.fab}
-          onPress={() => router.navigate("/src/screens/Postform")}
-        >
-          <Ionicons name="add" size={30} color="white" />
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.navigate("/src/screens/Postform")}
+      >
+        <Ionicons name="add" size={30} color="white" />
+      </TouchableOpacity>
 
-      {ClubselectedItem && (
-        <ClubModal
-          visible={ClubmodalVisible}
-          item={ClubselectedItem}
-          onClose={() => {
-            setClubModalVisible(false);
-            setClubSelectedItem(null);
-          }}
-        />
-      )}
+      <ClubModal
+        visible={isClubModalVisible}
+        item={clubSelectedItem}
+        onClose={() => {
+          setClubModalVisible(false);
+          setClubSelectedItem(null);
+        }}
+        onJoinSuccess={handleActionSuccess}
+      />
 
+      <EventModal
+        visible={isEventModalVisible}
+        item={eventSelectedItem}
+        onClose={() => {
+          setEventModalVisible(false);
+          setEventSelectedItem(null);
+        }}
+        onRegistrationSuccess={handleActionSuccess}
+      />
 
-{EventselectedItem && (
-        <EventModal
-          visible={EventmodalVisible}
-          item={EventselectedItem}
-          onClose={() => {
-            setEventModalVisible(false);
-            setEventSelectedItem(null);
-          }}
-        />
-      )}
-
-
-{SocialselectedItem && (
-        <SocialModal
-          visible={SocialmodalVisible}
-          item={SocialselectedItem}
-          onClose={() => {
-            setSocialModalVisible(false);
-            setSocialSelectedItem(null);
-          }}
-        />
-      )}
-
+      <SocialModal
+        visible={isSocialModalVisible}
+        item={socialSelectedItem}
+        onClose={() => {
+          setSocialModalVisible(false);
+          setSocialSelectedItem(null);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -277,13 +264,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 20,
-    backgroundColor: "#f0f2f5",
+    backgroundColor: "#F7F9FC",
   },
   centerScreen: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f0f2f5",
+    backgroundColor: "#F7F9FC",
   },
   loadingText: {
     marginTop: 10,
@@ -309,61 +296,55 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   sectionHeader: {
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: "Poppins-Bold",
-    marginTop: 20,
-    marginBottom: 10,
+    marginTop: 25,
+    marginBottom: 15,
     marginLeft: 16,
-    color: '#1c1e21',
+    color: '#2c3e50',
   },
   listPadding: {
     paddingHorizontal: 16,
     paddingBottom: 10,
   },
   card: {
-    width: 170,
+    width: 180,
     backgroundColor: "#fff",
-    borderRadius: 18,
+    borderRadius: 20,
     marginRight: 16,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 5,
+    elevation: 5,
+    shadowColor: '#4A90E2',
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 15,
     overflow: 'hidden',
   },
   cardImage: {
     width: "100%",
-    height: 100,
+    height: 110,
     backgroundColor: '#e9e9e9',
   },
   cardBody: {
-    padding: 12,
-    minHeight: 80,
+    padding: 14,
+    minHeight: 90,
     justifyContent: 'center',
   },
   cardTitle: {
-    fontSize: 15,
+    fontSize: 16,
     fontFamily: "Poppins-SemiBold",
     color: "#333",
   },
   cardText: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: "Poppins-Regular",
     color: '#555',
     marginTop: 4,
   },
-  cardInfo: {
-    fontSize: 13,
-    fontFamily: "Poppins-SemiBold",
-    color: colors.primary,
-    marginTop: 5,
-  },
   cardPrice: {
     fontSize: 14,
     fontFamily: "Poppins-Bold",
-    color: "#2E7D32",
-    marginTop: 5,
+    color: colors.primary,
+    marginTop: 6,
   },
   fab: {
     position: "absolute",
@@ -376,6 +357,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     elevation: 8,
+    shadowColor: colors.primary,
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
   },
- 
 });
