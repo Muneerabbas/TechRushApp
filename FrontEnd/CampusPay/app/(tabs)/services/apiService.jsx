@@ -22,6 +22,18 @@ export const getMyProfile = async () => {
     return response.data;
 };
 
+export const getBalance = async () => {
+    await setAuthToken();
+    const response = await axiosInstance.get('/auth/balance');
+    return response.data;
+};
+
+export const getMyContent = async () => {
+    await setAuthToken();
+    const response = await axiosInstance.get('/user/me/content');
+    return response.data;
+};
+
 
 export const search = async (query) => {
   if (!query.trim()) return { users: [], clubs: [], events: [], groups: [] };
@@ -133,8 +145,6 @@ export const sendPayment = async (receiverId, amount, description) => {
     const response = await axiosInstance.post('/transactions/send', { receiverId, amount, description });
     return response.data;
 };
-
-// --- GROUP APIs ---
 
 export const createGroup = async (name, participants, description) => {
     await setAuthToken();

@@ -1,4 +1,3 @@
-// app/(tabs)/transactions.jsx (Transactions Screen)
 import React, { useEffect, useState, useCallback } from "react";
 import {
   SafeAreaView,
@@ -7,14 +6,13 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  TouchableOpacity,
   RefreshControl,
 } from "react-native";
 import { useFonts } from "expo-font";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import colors from "../assets/utils/colors";
-import { getTransactionHistory } from "./services/apiService";
+import { getTransactionHistory, getBalance } from "./services/apiService";
 import { UserBalanceCard } from "./components/transactions/UserBalanceCard";
 import { TransactionCard } from "./components/transactions/TransactionCard";
 
@@ -27,18 +25,21 @@ export default function TransactionsScreen() {
 
   const [transactions, setTransactions] = useState([]);
   const [user, setUser] = useState({ id: "", name: "User" });
+  const [balance, setBalance] = useState(0);
   const [status, setStatus] = useState("loading");
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!refreshing) setStatus("loading");
     try {
-      const [history, currentUserID, currentUserName] = await Promise.all([
+      const [history, balanceData, currentUserID, currentUserName] = await Promise.all([
         getTransactionHistory(),
+        getBalance(),
         AsyncStorage.getItem("userID"),
         AsyncStorage.getItem("name"),
       ]);
       setUser({ id: currentUserID, name: currentUserName || "User" });
+      setBalance(balanceData.balance);
       setTransactions(history);
       setStatus(history.length > 0 ? "success" : "empty");
     } catch (error) {
@@ -89,7 +90,7 @@ export default function TransactionsScreen() {
         )}
         keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingHorizontal: 15, paddingTop: 15,paddingBottom:100, }}
+        contentContainerStyle={{ paddingHorizontal: 15, paddingTop: 15, paddingBottom: 100 }}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -113,7 +114,7 @@ export default function TransactionsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.heading}>My Wallet</Text>
-      <UserBalanceCard name={user.name?.split(" ")[1]} balance={80000} />
+      <UserBalanceCard name={user.name?.split(" ")[0]} balance={balance} />
       <View style={styles.main}>
         <Text style={styles.listHeader}>Recent History</Text>
         {renderContent()}
@@ -123,8 +124,7 @@ export default function TransactionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1,     backgroundColor: "#FFFBEB", 
- },
+  container: { flex: 1, backgroundColor: "#FFFBEB" },
   heading: {
     fontSize: 28,
     fontFamily: "Poppins-Bold",

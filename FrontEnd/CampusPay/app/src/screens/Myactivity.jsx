@@ -14,12 +14,11 @@ import {
 import { useFonts } from "expo-font";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import FooterComponent from "../components/Footer";
-import colors from "../assets/utils/colors";
-import { SocialModal } from "./components/social/SocialModal";
-import { EventModal } from "./components/social/EventModal";
-import { ClubModal } from "./components/social/ClubModal";
-import { getSocialFeed } from "./services/apiService";
+import colors from "../../assets/utils/colors";
+import { SocialModal } from "../../(tabs)/components/social/SocialModal";
+import { EventModal } from "../../(tabs)/components/social/EventModal";
+import { ClubModal } from "../../(tabs)/components/social/ClubModal";
+import { getMyContent } from "../../(tabs)/services/apiService";
 
 const FallbackImage = ({ uri, style, type }) => {
   const [hasError, setHasError] = useState(!uri);
@@ -27,12 +26,12 @@ const FallbackImage = ({ uri, style, type }) => {
   const getDefaultImage = () => {
     switch (type) {
       case 'event':
-        return require('../assets/images/event.png');
+        return require('../../assets/images/event.png');
       case 'social':
-        return require('../assets/images/social.png');
+        return require('../../assets/images/social.png');
       case 'club':
       default:
-        return require('../assets/images/club.png');
+        return require('../../assets/images/club.png');
     }
   };
 
@@ -48,20 +47,26 @@ const FallbackImage = ({ uri, style, type }) => {
 const LoadingScreen = () => (
   <View style={styles.centerScreen}>
     <ActivityIndicator size="large" color={colors.primary} />
-    <Text style={styles.loadingText}>Loading Feed...</Text>
+    <Text style={styles.loadingText}>Loading Your Activity...</Text>
   </View>
 );
 
 const ErrorScreen = ({ onRetry }) => (
   <View style={styles.centerScreen}>
-    <Text style={styles.errorText}>Oops! Something went wrong.</Text>
+    <Text style={styles.errorText}>Could not load your activity.</Text>
     <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
       <Text style={styles.retryButtonText}>Try Again</Text>
     </TouchableOpacity>
   </View>
 );
 
-export default function Social() {
+const EmptyState = ({ message }) => (
+    <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>{message}</Text>
+    </View>
+);
+
+export default function MyActivity() {
   const [clubSelectedItem, setClubSelectedItem] = useState(null);
   const [isClubModalVisible, setClubModalVisible] = useState(false);
   const [eventSelectedItem, setEventSelectedItem] = useState(null);
@@ -69,43 +74,43 @@ export default function Social() {
   const [socialSelectedItem, setSocialSelectedItem] = useState(null);
   const [isSocialModalVisible, setSocialModalVisible] = useState(false);
   
-  const [clubs, setClubs] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [communityPosts, setCommunityPosts] = useState([]);
+  const [myClubs, setMyClubs] = useState([]);
+  const [myEvents, setMyEvents] = useState([]);
+  const [myPosts, setMyPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const router = useRouter();
 
   const [fontsLoaded] = useFonts({
-    "Poppins-Bold": require("../assets/fonts/Poppins-Bold.ttf"),
-    "Poppins-Regular": require("../assets/fonts/Poppins-Regular.ttf"),
-    "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
+    "Poppins-Bold": require("../../assets/fonts/Poppins-Bold.ttf"),
+    "Poppins-Regular": require("../../assets/fonts/Poppins-Regular.ttf"),
+    "Poppins-SemiBold": require("../../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
-  const getAllData = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setIsError(false);
+    if (!isRefreshing) setIsLoading(true);
     try {
-      const { clubs, events, socials } = await getSocialFeed();
-      setClubs(clubs);
-      setEvents(events);
-      setCommunityPosts(socials);
+      const { clubs, events, posts } = await getMyContent();
+      setMyClubs(clubs);
+      setMyEvents(events);
+      setMyPosts(posts);
     } catch (err) {
-      console.error("Error fetching data:", err);
+      console.error("Error fetching my content:", err);
       setIsError(true);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [isRefreshing]);
 
   useEffect(() => {
-    getAllData();
-  }, [getAllData]);
+    fetchData();
+  }, [fetchData]);
 
   const handleRefresh = () => {
     setIsRefreshing(true);
-    getAllData();
   };
 
   const openClubModal = (item) => {
@@ -124,7 +129,7 @@ export default function Social() {
   };
 
   const handleActionSuccess = () => {
-    getAllData();
+    fetchData();
   };
 
   const renderClubCard = ({ item }) => (
@@ -136,8 +141,6 @@ export default function Social() {
       />
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.cardPrice}>{item.eventType}</Text>
-        {item.ticketPrice === 0 ? null : <Text style={styles.cardPrice}>₹{item.ticketPrice}</Text>}
       </View>
     </TouchableOpacity>
   );
@@ -151,7 +154,6 @@ export default function Social() {
       />
       <View style={styles.cardBody}>
         <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
-        <Text style={styles.cardPrice}>{item.eventType === "Paid" ? `₹${item.ticketPrice}` : "Free"}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -163,8 +165,7 @@ export default function Social() {
         style={styles.cardImage}
         type="social"
       />
-      <View style={styles.cardBody}>
-        <Text style={styles.cardTitle}>{item.author?.name}</Text>
+       <View style={styles.cardBody}>
         <Text style={styles.cardText} numberOfLines={2}>{item.content}</Text>
       </View>
     </TouchableOpacity>
@@ -175,16 +176,17 @@ export default function Social() {
   }
 
   if (isError) {
-    return <ErrorScreen onRetry={getAllData} />;
+    return <ErrorScreen onRetry={fetchData} />;
   }
 
   return (
     <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-            <Text style={styles.headerTitle}>Community Feed</Text>
-            <TouchableOpacity style={styles.activityButton} onPress={() => router.navigate('src/screens/Myactivity')}>
-                <Ionicons name="newspaper-outline" size={24} color="#1A202C" />
+            <TouchableOpacity style={styles.backButton} onPress={() => router.navigate("../../../src/screens/home")}>
+                <Ionicons name="arrow-back" size={24} color="#1A202C" />
             </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Activity</Text>
+            <View style={{width: 44}} />
         </View>
 
       <ScrollView
@@ -197,70 +199,61 @@ export default function Social() {
           />
         }
       >
-        <Text style={styles.sectionHeader}>Discover Clubs</Text>
-        <FlatList
-          data={clubs}
-          renderItem={renderClubCard}
-          keyExtractor={(item) => item._id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.listPadding}
-        />
-        <Text style={styles.sectionHeader}>Upcoming Events</Text>
-        <FlatList
-          data={events}
-          renderItem={renderEventCard}
-          keyExtractor={(item) => item._id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.listPadding}
-        />
-        <Text style={styles.sectionHeader}>Community Activity</Text>
-        <FlatList
-          data={communityPosts}
-          renderItem={renderSocialPost}
-          keyExtractor={(item) => item._id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.listPadding}
-        />
-        <FooterComponent/>
-      </ScrollView>
+        <Text style={styles.sectionHeader}>My Clubs</Text>
+        {myClubs.length > 0 ? (
+            <FlatList
+                data={myClubs}
+                renderItem={renderClubCard}
+                keyExtractor={(item) => item._id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.listPadding}
+            />
+        ) : <EmptyState message="You haven't joined any clubs yet." />}
 
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.navigate("/src/screens/Postform")}
-      >
-        <Ionicons name="create-outline" size={30} color="white" />
-      </TouchableOpacity>
+        <Text style={styles.sectionHeader}>My Events</Text>
+        {myEvents.length > 0 ? (
+            <FlatList
+                data={myEvents}
+                renderItem={renderEventCard}
+                keyExtractor={(item) => item._id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.listPadding}
+            />
+        ) : <EmptyState message="You aren't registered for any events." />}
+
+        <Text style={styles.sectionHeader}>My Posts</Text>
+        {myPosts.length > 0 ? (
+            <FlatList
+                data={myPosts}
+                renderItem={renderSocialPost}
+                keyExtractor={(item) => item._id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.listPadding}
+            />
+        ) : <EmptyState message="You haven't posted anything yet." />}
+      </ScrollView>
 
       <ClubModal
         visible={isClubModalVisible}
         item={clubSelectedItem}
-        onClose={() => {
-          setClubModalVisible(false);
-          setClubSelectedItem(null);
-        }}
+        onClose={() => setClubModalVisible(false)}
         onJoinSuccess={handleActionSuccess}
       />
 
       <EventModal
         visible={isEventModalVisible}
         item={eventSelectedItem}
-        onClose={() => {
-          setEventModalVisible(false);
-          setEventSelectedItem(null);
-        }}
+        onClose={() => setEventModalVisible(false)}
         onRegistrationSuccess={handleActionSuccess}
       />
 
       <SocialModal
         visible={isSocialModalVisible}
         item={socialSelectedItem}
-        onClose={() => {
-          setSocialModalVisible(false);
-          setSocialSelectedItem(null);
-        }}
+        onClose={() => setSocialModalVisible(false)}
       />
     </SafeAreaView>
   );
@@ -280,27 +273,16 @@ const styles = StyleSheet.create({
     paddingBottom: 25,
     backgroundColor: '#F7F9FC',
   },
-  headerTitle: {
-    fontSize: 28,
-    fontFamily: 'Poppins-Bold',
-    color: '#1A202C',
-  },
-  activityButton: {
+  backButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 5,
   },
-  activityIcon: {
-    width: 24,
-    height: 24,
+  headerTitle: {
+    fontSize: 22,
+    fontFamily: 'Poppins-Bold',
+    color: '#1A202C',
   },
   centerScreen: {
     flex: 1,
@@ -362,7 +344,7 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     padding: 14,
-    minHeight: 90,
+    minHeight: 70,
     justifyContent: 'center',
   },
   cardTitle: {
@@ -376,26 +358,17 @@ const styles = StyleSheet.create({
     color: '#555',
     marginTop: 4,
   },
-  cardPrice: {
-    fontSize: 14,
-    fontFamily: "Poppins-Bold",
-    color: colors.primary,
-    marginTop: 6,
+  emptyContainer: {
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
   },
-  fab: {
-    position: "absolute",
-    bottom: 100,
-    right: 20,
-    backgroundColor: colors.primary,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 8,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-  },
+  emptyText: {
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 16,
+    color: '#718096',
+  }
 });
