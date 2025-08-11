@@ -1,10 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ImageBackground, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import colors from '../../../assets/utils/colors';
 import { useRouter } from 'expo-router';
 
-export const Header = ({ name, role, onReload }) => {
+export const Header = ({ name, role }) => {
   const router = useRouter();
   const greetingName = role === 'Admin' ? 'Admin' : name || 'Buddy!';
 
@@ -17,13 +16,16 @@ export const Header = ({ name, role, onReload }) => {
       <View style={styles.overlay}>
         <View style={styles.topRow}>
           <TouchableOpacity
-            style={styles.profileBtn}
-            onPress={() => router.replace("/src/screens/profile")}
+            style={styles.iconButton}
+            onPress={() => router.push("../../../src/screens/profile")}
           >
-            <Ionicons name="person-outline" size={25} color={colors.text} />
+            <Image source={require('../../../assets/images/profile.webp')} style={styles.iconImage} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={onReload} style={styles.reloadBtn}>
-            <Ionicons name="reload-circle-outline" size={32} color={colors.white} />
+          <TouchableOpacity 
+            style={styles.iconButton}
+            onPress={() => router.push('../../../src/screens/notifications')}
+          >
+            <Image source={require('../../../assets/images/notification.webp')} style={styles.iconImage} />
           </TouchableOpacity>
         </View>
         <View style={styles.greetingContainer}>
@@ -40,7 +42,8 @@ export const Header = ({ name, role, onReload }) => {
 
 const styles = StyleSheet.create({
   header: {
-    height: 300, 
+    height: 280, 
+    justifyContent: 'flex-end',
   },
   backgroundImage: {
     resizeMode: 'cover',
@@ -58,16 +61,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  profileBtn: {
-    backgroundColor: colors.secondary,
-    height: 45,
-    width: 45,
-    borderRadius: 22.5,
+  iconButton: {
+    height: 50,
+    width: 50,
+    borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
-  reloadBtn: {
-    padding: 5,
+  iconImage: {
+      width: 32,
+      height: 32,
   },
   greetingContainer: {
     flexDirection: 'row',
