@@ -1,4 +1,4 @@
-import { React, useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Modal,
   View,
@@ -14,6 +14,23 @@ import colors from "../../../assets/utils/colors";
 import { EPaymentModal } from "./EPaymentModal";
 import { registerForEvent } from "../../services/apiService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const API_URL = 'https://techrush-backend.onrender.com';
+
+const FallbackImage = ({ uri, style }) => {
+  const [hasError, setHasError] = useState(!uri);
+  return (
+    <Image
+      source={
+        hasError
+          ? require("../../../assets/images/event.png")
+          : { uri }
+      }
+      style={style}
+      onError={() => setHasError(true)}
+    />
+  );
+};
 
 export const EventModal = ({ visible, item, onClose, onRegistrationSuccess }) => {
   if (!item) return null;
@@ -31,7 +48,6 @@ export const EventModal = ({ visible, item, onClose, onRegistrationSuccess }) =>
       try {
         const userId = await AsyncStorage.getItem("userID");
         if (userId && item.attendees && Array.isArray(item.attendees)) {
-          // FIX: Robustly check if attendee is an object or a string ID
           const registered = item.attendees.some(attendee => {
             const attendeeId = typeof attendee === 'object' && attendee !== null ? attendee._id : attendee;
             return attendeeId === userId;
@@ -51,25 +67,10 @@ export const EventModal = ({ visible, item, onClose, onRegistrationSuccess }) =>
     checkRegistrationStatus();
   }, [visible, item]);
 
-  const FallbackImage = ({ uri, style }) => {
-    const [hasError, setHasError] = useState(!uri);
-    return (
-      <Image
-        source={
-          hasError
-            ? require("../../../assets/images/event.png")
-            : { uri }
-        }
-        style={style}
-        onError={() => setHasError(true)}
-      />
-    );
-  };
-
   const handleSuccessfulRegistration = () => {
     setIsAlreadyRegistered(true); 
     if (onRegistrationSuccess) {
-      onRegistrationSuccess(item._id); // Notify parent to refetch data
+      onRegistrationSuccess(item._id);
     }
     onClose();
   };
@@ -119,7 +120,7 @@ export const EventModal = ({ visible, item, onClose, onRegistrationSuccess }) =>
             <FallbackImage
               uri={
                 item.coverImage
-                  ? `https://techrush-backend.onrender.com${item.coverImage}`
+                  ? `${API_URL}${item.coverImage}`
                   : null
               }
               style={styles.modalImage}

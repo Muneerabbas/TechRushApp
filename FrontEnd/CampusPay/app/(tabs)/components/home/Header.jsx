@@ -62,16 +62,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconButton: {
-    height: 50,
-    width: 50,
+    height: 40,
+    width: 40,
     borderRadius: 25,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
   iconImage: {
-      width: 32,
-      height: 32,
+      width: 41,
+      height: 41,
   },
   greetingContainer: {
     flexDirection: 'row',
