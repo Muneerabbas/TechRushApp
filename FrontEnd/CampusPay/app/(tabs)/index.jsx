@@ -5,25 +5,23 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Animated,
   TextInput,
   Text,
-  Modal,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
+  Animated,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFonts } from "expo-font";
 import axios from "axios";
 import { Ionicons } from "@expo/vector-icons";
 
-import FooterComponent from "../components/Footer";
 import PaymentModal from "../components/PaymentModal";
 import colors from "../assets/utils/colors";
 import { Header } from "./components/home/Header";
 import { QuickActions } from "./components/home/QuickActions";
 import { RecentGroups } from "../components/RecentGroups";
-import { scanIdCard } from "../services/idCardScanner";
 
 export default function HomeScreen() {
   const [fontsLoaded] = useFonts({
@@ -40,13 +38,9 @@ export default function HomeScreen() {
   const [searchedUsers, setSearchedUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
-  const [ocrLoading, setOcrLoading] = useState(false);
   const [groups, setGroups] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
   const scrollY = useRef(new Animated.Value(0)).current;
-
-  const fadeGroups = useRef(new Animated.Value(0)).current;
-  const fadeFooter = useRef(new Animated.Value(0)).current;
-  const fadeQuickActions = useRef(new Animated.Value(0)).current;
 
   const loadInitialData = useCallback(async () => {
     const username = await AsyncStorage.getItem("name");
@@ -62,38 +56,20 @@ export default function HomeScreen() {
         }
       );
       setGroups(res.data || []);
-    } catch (error) {}
+    } catch (error) {
+        console.error("Failed to fetch groups:", error);
+    }
   }, []);
 
   useEffect(() => {
     loadInitialData();
   }, [loadInitialData]);
 
-  useEffect(() => {
-    Animated.timing(fadeGroups, {
-      toValue: 1,
-      duration: 700,
-      useNativeDriver: true,
-    }).start();
-  }, [groups]);
-
-  useEffect(() => {
-    Animated.timing(fadeFooter, {
-      toValue: 1,
-      duration: 700,
-      delay: 300,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  useEffect(() => {
-    Animated.timing(fadeQuickActions, {
-      toValue: 1,
-      duration: 700,
-      delay: 150,
-      useNativeDriver: true,
-    }).start();
-  }, []);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadInitialData();
+    setRefreshing(false);
+  }, [loadInitialData]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -131,20 +107,6 @@ export default function HomeScreen() {
     setSearchQuery(user.name);
   };
 
-  const handleScanId = async () => {
-    setOcrLoading(true);
-    try {
-      const extractedName = await scanIdCard(false, console.log);
-      if (extractedName) {
-        setSearchQuery(extractedName);
-      }
-    } catch (err) {
-      console.error("Scan failed:", err);
-    } finally {
-      setOcrLoading(false);
-    }
-  };
-
   const payUserScale = scrollY.interpolate({
     inputRange: [0, 150],
     outputRange: [1, 0.9],
@@ -170,13 +132,16 @@ export default function HomeScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <Header name={name} role={role} onReload={loadInitialData} />
+      <Header name={name} role={role} />
       <View style={styles.mainContentArea}>
         <Animated.ScrollView
           contentContainerStyle={styles.contentContainer}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+          }
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
             { useNativeDriver: true }
@@ -199,12 +164,8 @@ export default function HomeScreen() {
                 value={searchQuery}
                 onChangeText={setSearchQuery}
               />
-              <TouchableOpacity onPress={handleScanId} style={styles.scanButton}>
-                {ocrLoading ? (
-                  <ActivityIndicator size="small" color={colors.primary} />
-                ) : (
-                  <Ionicons name="id-card-outline" size={24} color={colors.primary} />
-                )}
+              <TouchableOpacity style={styles.scanButton}>
+                <Ionicons name="id-card-outline" size={24} color={colors.primary} />
               </TouchableOpacity>
             </View>
             {isSearching && <ActivityIndicator style={{ marginVertical: 10 }} />}
@@ -221,20 +182,15 @@ export default function HomeScreen() {
             )}
           </Animated.View>
 
-          <Animated.View style={{ paddingHorizontal: 25, opacity: fadeQuickActions }}>
+          <View style={{ paddingHorizontal: 25 }}>
             <QuickActions
               splitAmount={splitAmount}
               setSplitAmount={setSplitAmount}
             />
-          </Animated.View>
+          </View>
 
-          <Animated.View style={{ opacity: fadeGroups }}>
-            <RecentGroups groups={groups} />
-          </Animated.View>
+          <RecentGroups groups={groups} />
 
-          <Animated.View style={{ opacity: fadeFooter }}>
-            <FooterComponent />
-          </Animated.View>
         </Animated.ScrollView>
       </View>
       {isModalVisible && selectedUser && (
