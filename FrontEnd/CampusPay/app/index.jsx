@@ -3,7 +3,14 @@ import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ActivityIndicator, View } from 'react-native';
 import axios from 'axios';
+import { LogBox } from 'react-native';
 
+if (__DEV__) {
+  LogBox.ignoreAllLogs(true);           
+  console.log = () => {};            
+  console.warn = () => {};             
+  console.error = () => {};            
+}
 axios.defaults.baseURL = 'https://techrush-backend.onrender.com/api'
 export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
