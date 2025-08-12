@@ -24,15 +24,15 @@ const styles = StyleSheet.create({
   userCard: {
     backgroundColor: colors.secondary,
     marginHorizontal: 20,
-    borderRadius: 24,
+    borderRadius: 30,
     padding: 28,
     elevation: 14,
     shadowColor: "#000",
     shadowOpacity: 0.15,
-    shadowRadius: 24,
+    shadowRadius: 34,
     shadowOffset: { width: 0, height: 16 },
     borderWidth: 1,
-    borderColor: "#A7C4A0", // subtle green border tint
+    borderColor: "#A7C4A0", 
     zIndex: 10,
   },
   cardHeader: {

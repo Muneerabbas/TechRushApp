@@ -23,6 +23,7 @@ const PIN_STORAGE_KEY = 'userSecurityPIN';
 
 export default function PaymentModal({ data, Payto, receiverid }) {
   const [amount, setAmount] = useState("");
+  const [description, setDescription] = useState("");
   const [pin, setPin] = useState("");
   const [showPinInput, setShowPinInput] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +49,7 @@ export default function PaymentModal({ data, Payto, receiverid }) {
       const storedPin = await AsyncStorage.getItem(PIN_STORAGE_KEY);
       if (pin === storedPin) {
         const token = await AsyncStorage.getItem("authToken");
-        const payload = { receiverId: receiverid, amount: Number(amount), description: `Payment to ${Payto}` };
+        const payload = { receiverId: receiverid, amount: Number(amount), description: description };
         await axios.post(
           `https://techrush-backend.onrender.com/api/transactions/send`,
           payload,
@@ -60,7 +61,7 @@ export default function PaymentModal({ data, Payto, receiverid }) {
           }
         );
         Alert.alert("Success!", "Payment sent successfully!");
-        data(); // Close modal on success
+        data();
       } else {
         Alert.alert("Incorrect PIN", "The PIN you entered is incorrect. Please try again.");
         setPin("");
@@ -99,18 +100,28 @@ export default function PaymentModal({ data, Payto, receiverid }) {
           </Text>
 
           {!showPinInput ? (
-            <View style={styles.inputContainer}>
-              <Text style={styles.currencySymbol}>₹</Text>
+            <>
+              <View style={styles.inputContainer}>
+                <Text style={styles.currencySymbol}>₹</Text>
+                <TextInput
+                  style={styles.amountInput}
+                  placeholder="0.00"
+                  keyboardType="numeric"
+                  value={amount}
+                  onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ""))}
+                  placeholderTextColor="#bbb"
+                  editable={!isLoading}
+                />
+              </View>
               <TextInput
-                style={styles.amountInput}
-                placeholder="0.00"
-                keyboardType="numeric"
-                value={amount}
-                onChangeText={(text) => setAmount(text.replace(/[^0-9.]/g, ""))}
+                style={styles.descriptionInput}
+                placeholder="Add a message (optional)"
+                value={description}
+                onChangeText={setDescription}
                 placeholderTextColor="#bbb"
                 editable={!isLoading}
               />
-            </View>
+            </>
           ) : isLoading ? (
             <View style={styles.loaderContainer}>
               <ActivityIndicator size="large" color={colors.primary} />
@@ -208,7 +219,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     borderRadius: 14,
     paddingHorizontal: 18,
-    marginBottom: 28,
     width: "100%",
     shadowColor: "#000",
     shadowOpacity: 0.05,
@@ -227,6 +237,17 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Bold",
     color: colors.primary,
     paddingVertical: 14,
+  },
+  descriptionInput: {
+    width: "100%",
+    backgroundColor: "#f0f0f0",
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    fontSize: 14,
+    fontFamily: "Poppins-Regular",
+    marginTop: 15,
+    marginBottom: 28,
   },
   pinInput: {
     fontSize: 26,

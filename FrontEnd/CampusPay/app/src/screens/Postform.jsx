@@ -268,12 +268,13 @@ export default function PostForm() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#F7F9FC", paddingVertical:30, },
+  safeArea: { flex: 1, backgroundColor: "#F8F7FF", paddingVertical:30, },
   container: { flex: 1, paddingHorizontal: 20 },
   header: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,
+    backgroundColor:"#F8F7FF"
   },
   backButton: {
     padding: 5,

@@ -269,7 +269,7 @@ export default function Social() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7F9FC",
+ backgroundColor: "#F8F7FF"
   },
   header: {
     flexDirection: 'row',

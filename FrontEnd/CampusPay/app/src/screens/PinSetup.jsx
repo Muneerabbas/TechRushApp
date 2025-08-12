@@ -168,7 +168,7 @@ export default function PinSetupScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F7FB',
+    backgroundColor: '#F8F7FF',
   },
   container: {
     flex: 1,

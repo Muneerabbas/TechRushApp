@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: 16, paddingVertical: 10 },
   card: {
     width: 180, 
-    backgroundColor: "#fff", 
+    backgroundColor: "#FFFBEB", 
     borderRadius: 18, 
     marginRight: 16,
     elevation: 4, 

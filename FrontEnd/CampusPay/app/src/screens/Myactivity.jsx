@@ -265,7 +265,7 @@ export default function MyActivity() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F7F9FC",
+    backgroundColor: "#F8F7FF",
   },
   header: {
     flexDirection: 'row',
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     paddingBottom: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    borderBottomColor: '#F8F7FF',
   },
   backButton: {
     width: 44,

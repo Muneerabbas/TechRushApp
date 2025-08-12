@@ -1,4 +1,4 @@
-//app/(tabs)/_layout.jsx
+// app/(tabs)/_layout.jsx
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
 import React from 'react';
@@ -15,21 +15,27 @@ export default function _layout() {
         tabBarShowLabel: true,
         tabBarLabelStyle: {
           fontFamily: 'Poppins-SemiBold',
-          fontSize: 10,
-          marginBottom: 5,
+          fontSize: 11,
+          marginBottom: Platform.OS === 'ios' ? 5 : 3,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 5,
+          justifyContent: 'center',
+          alignItems: 'center',
         },
         tabBarStyle: {
           position: 'absolute',
-          height: Platform.OS === 'ios' ? 90 : 70,
+          height: Platform.OS === 'ios' ? 95 : 75, 
           backgroundColor: '#ffffff',
           borderTopLeftRadius: 30,
           borderTopRightRadius: 30,
+          overflow: 'hidden', 
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: 0.1,
           shadowRadius: 8,
           elevation: 12,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+          paddingBottom: Platform.OS === 'ios' ? 15 : 8,
         },
       }}
     >
@@ -39,8 +45,8 @@ export default function _layout() {
           title: 'Social',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? 'happy' : 'happy-outline'}
-              size={24}
+              name={focused ? 'people' : 'people-outline'}
+              size={26}
               color={focused ? colors.primary : color}
             />
           ),
@@ -53,8 +59,8 @@ export default function _layout() {
           title: 'Pay',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
-              name={focused ? 'cash' : 'cash-outline'}
-              size={24}
+              name={focused ? 'wallet' : 'wallet-outline'}
+              size={26}
               color={focused ? colors.primary : color}
             />
           ),
@@ -68,8 +74,8 @@ export default function _layout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'receipt' : 'receipt-outline'}
-              size={24}
-              color={focused ? colors.background : color}
+              size={26}
+              color={focused ? colors.primary : color}
             />
           ),
         }}

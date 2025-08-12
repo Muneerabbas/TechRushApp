@@ -21,16 +21,16 @@ const NotificationItem = ({ item }) => {
     switch (type) {
       case 'Group':
       case 'PaymentRequest':
-        return { name: 'people-circle-outline', color: colors.primary };
+        return { name: 'people-circle', color: colors.primary };
       case 'Payment':
       case 'PaymentSettled':
-        return { name: 'wallet-outline', color: '#16A34A' };
+        return { name: 'wallet', color: '#16A34A' };
       case 'Event':
-        return { name: 'calendar-outline', color: '#DC2626' };
+        return { name: 'calendar', color: '#DC2626' };
       case 'Club':
-        return { name: 'shield-checkmark-outline', color: '#D97706' };
+        return { name: 'shield-checkmark', color: '#D97706' };
       default:
-        return { name: 'notifications-outline', color: '#555' };
+        return { name: 'notifications', color: '#4B5563' };
     }
   };
 
@@ -38,6 +38,7 @@ const NotificationItem = ({ item }) => {
     const date = new Date(dateString);
     const now = new Date();
     const seconds = Math.floor((now - date) / 1000);
+    if (seconds < 60) return 'just now';
     let interval = seconds / 31536000;
     if (interval > 1) return `${Math.floor(interval)}y ago`;
     interval = seconds / 2592000;
@@ -47,16 +48,15 @@ const NotificationItem = ({ item }) => {
     interval = seconds / 3600;
     if (interval > 1) return `${Math.floor(interval)}h ago`;
     interval = seconds / 60;
-    if (interval > 1) return `${Math.floor(interval)}m ago`;
-    return `${Math.floor(seconds)}s ago`;
+    return `${Math.floor(interval)}m ago`;
   };
 
   const icon = getIconForType(item.type);
 
   return (
     <View style={styles.notificationItem}>
-      <View style={[styles.iconContainer, { backgroundColor: `${icon.color}20` }]}>
-        <Ionicons name={icon.name} size={24} color={icon.color} />
+      <View style={[styles.iconContainer, { backgroundColor: `${icon.color}1A` }]}>
+        <Ionicons name={icon.name} size={26} color={icon.color} />
       </View>
       <View style={styles.textContainer}>
         <Text style={styles.messageText}>{item.message}</Text>
@@ -100,9 +100,9 @@ export default function NotificationsScreen() {
   };
 
   const ListHeader = () => (
-    <View style={styles.iconHeader}>
-        <Ionicons name="notifications-circle" size={80} color={colors.primary} />
-        <Text style={styles.iconHeaderText}>Your Activity</Text>
+    <View style={styles.listHeaderContainer}>
+        <Ionicons name="notifications-circle" size={72} color={colors.primary} />
+        <Text style={styles.listHeaderText}>Your Activity Feed</Text>
     </View>
   );
 
@@ -121,8 +121,8 @@ export default function NotificationsScreen() {
         >
             <ListHeader />
             <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
-                <Ionicons name="notifications-off-outline" size={60} color="#ccc" />
-                <Text style={styles.centeredMessageText}>You have no new notifications.</Text>
+                <Ionicons name="notifications-off-circle-outline" size={60} color="#CBD5E1" />
+                <Text style={styles.centeredMessageText}>No new notifications yet.</Text>
             </View>
         </ScrollView>
       );
@@ -132,7 +132,7 @@ export default function NotificationsScreen() {
         data={notifications}
         renderItem={({ item }) => <NotificationItem item={item} />}
         keyExtractor={(item) => item._id}
-        contentContainerStyle={{ padding: 15 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16 }}
         ListHeaderComponent={ListHeader}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
       />
@@ -145,7 +145,7 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={28} color={colors.text} />
+          <Ionicons name="arrow-back" size={28} color="#1F2937" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
       </View>
@@ -155,55 +155,90 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.primary + '0A' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F8F7FF',
+  },
   header: {
-    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15,
-    paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f0f0f0',
-    backgroundColor: colors.white,
-  },
-  backButton: { padding: 5 },
-  headerTitle: { fontSize: 22, fontFamily: 'Poppins-Bold', color: colors.text, marginLeft: 15 },
-  iconHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 20,
-    marginBottom: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: 20,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  iconHeaderText: {
+  backButton: {
+    padding: 5,
+    marginRight: 10,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontFamily: 'Poppins-Bold',
+    color: '#111827',
+  },
+  listHeaderContainer: {
+    alignItems: 'center',
+    paddingVertical: 24,
+    marginBottom: 8,
+  },
+  listHeaderText: {
     fontFamily: 'Poppins-SemiBold',
     fontSize: 18,
-    color: colors.textSecondary,
-    marginTop: 5,
+    color: '#4B5563',
+    marginTop: 8,
   },
   notificationItem: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: colors.secondary + '1A',
-    borderRadius: 15, 
-    padding: 15, 
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fffefaff',
+    borderRadius: 16,
+    padding: 16,
     marginVertical: 8,
-    borderWidth: 1,
-    borderColor: colors.secondary + '30',
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
   },
   iconContainer: {
-    width: 50, height: 50, borderRadius: 25,
-    justifyContent: 'center', alignItems: 'center', marginRight: 15,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
-  textContainer: { flex: 1 },
+  textContainer: {
+    flex: 1,
+  },
   messageText: {
-    fontFamily: 'Poppins-Regular', fontSize: 14, color: colors.text,
-    lineHeight: 20,
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 14,
+    color: '#1F2937',
+    lineHeight: 22,
   },
   timeText: {
-    fontFamily: 'Poppins-Regular', fontSize: 12, color: colors.textSecondary,
+    fontFamily: 'Poppins-Regular',
+    fontSize: 12,
+    color: '#6B7281',
     marginTop: 4,
   },
   centeredMessage: {
-    flex: 1, justifyContent: 'center', alignItems: 'center',
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
   },
   centeredMessageText: {
-      fontFamily: 'Poppins-SemiBold',
-      fontSize: 16,
-      color: '#aaa',
-      marginTop: 15,
+    fontFamily: 'Poppins-SemiBold',
+    fontSize: 16,
+    color: '#9CA3AF',
+    marginTop: 16,
+    textAlign: 'center',
   }
 });
