@@ -162,7 +162,7 @@ export default function TransactionsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.heading}>My Wallet</Text>
-      <UserBalanceCard name={user.name?.split(" ")[0]} balance={balance} />
+      <UserBalanceCard name={user.name?.split(" ")[1]} balance={balance} />
       <View style={styles.main}>
         <Text style={styles.listHeader}>Recent History</Text>
         {renderContent()}
