@@ -10,11 +10,13 @@ import {
   Alert,
   ActivityIndicator,
   SafeAreaView,
+  Platform,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import colors from "../../assets/utils/colors";
 import {
@@ -46,6 +48,9 @@ export default function PostForm() {
   const [price, setPrice] = useState("");
   const [location, setLocation] = useState("");
   const [capacity, setCapacity] = useState("");
+  const [eventDate, setEventDate] = useState(new Date());
+  const [mode, setMode] = useState('date');
+  const [showPicker, setShowPicker] = useState(false);
 
   useEffect(() => {
     const fetchUserRole = async () => {
@@ -70,6 +75,25 @@ export default function PostForm() {
     }
   };
 
+  const onDateChange = (event, selectedDate) => {
+    const currentDate = selectedDate || eventDate;
+    setShowPicker(Platform.OS === 'ios');
+    setEventDate(currentDate);
+  };
+
+  const showMode = (currentMode) => {
+    setShowPicker(true);
+    setMode(currentMode);
+  };
+
+  const showDatepicker = () => {
+    showMode('date');
+  };
+
+  const showTimepicker = () => {
+    showMode('time');
+  };
+
   const handleSubmit = async () => {
     if (
       !category ||
@@ -79,8 +103,8 @@ export default function PostForm() {
       Alert.alert("Error", "Please fill all required fields.");
       return;
     }
-    if (category === "Events" && !capacity.trim()) {
-      Alert.alert("Error", "Please enter the event capacity.");
+    if (category === "Events" && (!capacity.trim() || !location.trim())) {
+      Alert.alert("Error", "Please enter the event capacity and location.");
       return;
     }
     setIsLoading(true);
@@ -105,9 +129,10 @@ export default function PostForm() {
         formData.append("description", description);
         formData.append("eventType", membershipType);
         if (membershipType === "Paid") formData.append("ticketPrice", price);
-        formData.append("location", location || "Campus");
+        formData.append("location", location);
         formData.append("visibility", "Public");
         formData.append("capacity", capacity);
+        formData.append("date", eventDate.toISOString());
         await createEvent(formData);
       } else if (category === "Social") {
         formData.append("content", description);
@@ -115,6 +140,7 @@ export default function PostForm() {
       }
       router.back();
     } catch (error) {
+       Alert.alert("Error", "Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -231,6 +257,29 @@ export default function PostForm() {
                   onChangeText={setCapacity}
                   keyboardType="numeric"
                 />
+
+                <Text style={styles.label}>Date & Time*</Text>
+                <View style={styles.dateRow}>
+                    <TouchableOpacity onPress={showDatepicker} style={[styles.input, styles.dateInput]}>
+                        <Ionicons name="calendar-outline" size={20} color="#555" style={{marginRight: 10}}/>
+                        <Text style={styles.dateText}>{eventDate.toLocaleDateString()}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={showTimepicker} style={[styles.input, styles.dateInput]}>
+                        <Ionicons name="time-outline" size={20} color="#555" style={{marginRight: 10}}/>
+                        <Text style={styles.dateText}>{eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {showPicker && (
+                    <DateTimePicker
+                        testID="dateTimePicker"
+                        value={eventDate}
+                        mode={mode}
+                        is24Hour={true}
+                        display="default"
+                        onChange={onDateChange}
+                    />
+                )}
               </>
             )}
 
@@ -311,9 +360,23 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins-Regular",
     borderWidth: 1,
     borderColor: "#e0e6ed",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   textArea: { height: 120, textAlignVertical: "top" },
   row: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
+  dateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  dateInput: {
+    flex: 1,
+  },
+  dateText: {
+    fontFamily: 'Poppins-Regular',
+    fontSize: 15,
+  },
   button: {
     borderWidth: 1.5,
     borderColor: colors.primary,

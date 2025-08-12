@@ -54,13 +54,13 @@ export default function Login() {
         await AsyncStorage.setItem('email', mail);
         await AsyncStorage.setItem('isLoggedIn', JSON.stringify(true));
         await AsyncStorage.setItem('role', role);
-        await AsyncStorage.setItem('userPin', userPin); // <-- New line to store the PIN
+        await AsyncStorage.setItem('userPin', userPin);
 
         console.log(role);
         const storedToken = await AsyncStorage.getItem('authToken');
         console.log('Token from AsyncStorage:', storedToken);
 
-        Alert.alert('Success', `Login Successful! Token stored: ${storedToken}`);
+        Alert.alert('Success', `Login Successful!`);
         router.replace('/(tabs)');
       } else {
         Alert.alert('Failed', 'Token not found in response');

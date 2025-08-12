@@ -219,7 +219,7 @@ export default function EditProfileScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-
+paddingVertical:20,
     backgroundColor: "#F5F7FB",
   },
 

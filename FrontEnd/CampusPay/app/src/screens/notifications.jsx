@@ -120,7 +120,7 @@ export default function NotificationsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         >
             <ListHeader />
-            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+            <View style={{flex: 1, justifyContent: 'center', alignItems: 'center',}}>
                 <Ionicons name="notifications-off-circle-outline" size={60} color="#CBD5E1" />
                 <Text style={styles.centeredMessageText}>No new notifications yet.</Text>
             </View>
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    paddingTop: 20,
+    paddingTop: 30,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
@@ -175,6 +175,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 24,
+
     fontFamily: 'Poppins-Bold',
     color: '#111827',
   },

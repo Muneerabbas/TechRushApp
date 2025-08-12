@@ -238,6 +238,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center', 
         alignItems: 'center', 
         backgroundColor: 'rgba(0,0,0,0.4)' 
+
     },
     modalContainer: {
         backgroundColor: 'white', 
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     billContainer: {
-        backgroundColor: '#F8F9FA', 
+        backgroundColor: '#F8F7FF', 
         borderRadius: 15, 
         padding: 15, 
         marginBottom: 15,

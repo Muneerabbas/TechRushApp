@@ -45,7 +45,6 @@ export default function HomeScreen() {
     "Poppins-SemiBold": require("../assets/fonts/Poppins-SemiBold.ttf"),
   });
 
-  // Component state variables
   const [name, setName] = useState("");
   const [role, setRole] = useState("");
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -57,10 +56,8 @@ export default function HomeScreen() {
   const [ocrLoading, setOcrLoading] = useState(false);
   const [groups, setGroups] = useState([]);
   
-  // Animated value for scroll position
   const scrollY = useRef(new Animated.Value(0)).current;
 
-  // Function to load initial user data and groups
   const loadInitialData = useCallback(async () => {
     const username = await AsyncStorage.getItem("name");
     const userRole = await AsyncStorage.getItem("role");
@@ -139,7 +136,6 @@ export default function HomeScreen() {
     }
   };
   
-  // Interpolations for scroll animation
   const payUserScale = scrollY.interpolate({
     inputRange: [0, 150],
     outputRange: [1, 0.9],
@@ -152,7 +148,6 @@ export default function HomeScreen() {
     extrapolate: "clamp",
   });
 
-  // Show loading modal until fonts are loaded
   if (!fontsLoaded) {
     return <LoadingModal visible={true} />;
   }
@@ -165,29 +160,22 @@ export default function HomeScreen() {
       <LoadingModal visible={!fontsLoaded} />
       <Header name={name} role={role} onReload={loadInitialData} />
       <View style={styles.mainContentArea}>
-        <Animated.ScrollView
+        <ScrollView
           contentContainerStyle={styles.contentContainer}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          scrollEventThrottle={16}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
-          )}
+         
         >
-          <Animated.View
+          <View
             style={[
-              styles.payUserContainer,
-              {
-                transform: [{ translateY: payUserTranslateY }, { scale: payUserScale }],
-              },
+              styles.payUserContainer
             ]}
           >
             <Text style={styles.payUserTitle}>Scan & Pay</Text>
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={22} color="#999" style={styles.searchIcon} />
               <TextInput
-                placeholder="Search user by name or ID..."
+                placeholder="Search user by name or ID"
                 style={styles.searchInput}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
@@ -212,7 +200,7 @@ export default function HomeScreen() {
                 </ScrollView>
               </View>
             )}
-          </Animated.View>
+          </View>
 
           <View style={{ paddingHorizontal: 25 }}>
             <QuickActions
@@ -228,7 +216,7 @@ export default function HomeScreen() {
           <View>
             <FooterComponent />
           </View>
-        </Animated.ScrollView>
+        </ScrollView>
       </View>
       {isModalVisible && selectedUser && (
         <PaymentModal
@@ -303,7 +291,7 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     fontFamily: "Poppins-Regular",
-    fontSize: 16,
+    fontSize: 12,
   },
   scanButton: {
     padding: 10,
