@@ -1,4 +1,3 @@
-````markdown
 # 🚀 TechRushApp — CampusPay
 
 Repo for **TechRush Hackathon** 🏆
