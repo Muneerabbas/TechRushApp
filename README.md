@@ -58,6 +58,7 @@ It makes transactions, event management, and social interactions seamless for co
 1. Install:
    ```bash
    npm install
+   ```
 ````
 
 2. Start:
